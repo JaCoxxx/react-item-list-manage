@@ -54,7 +54,34 @@ Start the development server with:
 npm run dev
 ```
 
+The `dev` command now initializes the local D1 schema and seed data only when the
+local database does not exist yet.
 Your application will be available at [http://localhost:5173](http://localhost:5173).
+
+## D1 setup
+
+This project now includes a household inventory backend schema in `db/schema.sql`
+and seed data in `db/seed.sql`.
+
+Because Wrangler in this repo requires Node 20+, ready-made commands are provided:
+
+```bash
+npm run d1:init:local
+npm run d1:init:remote
+```
+
+## API overview
+
+Main backend endpoints:
+
+- `GET /api/setup/status` - verify whether schema and seed data are ready
+- `GET /api/base-options` - read grouped base data
+- `GET /api/items` / `POST /api/items` / `PATCH /api/items/:id`
+- `POST /api/stock/in` - create a stock batch and inbound movement
+- `POST /api/stock/out` - deduct stock using FEFO batch allocation
+- `GET /api/movements` - list inventory movements
+- `GET /api/dashboard` - inventory overview
+- `GET /api/alerts` - expiring and expired stock
 
 ## Production
 

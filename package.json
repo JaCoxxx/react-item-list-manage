@@ -12,9 +12,12 @@
 		"publish": true
 	},
 	"dependencies": {
+		"@ant-design/icons": "^6.1.1",
+		"antd": "^6.3.5",
 		"hono": "4.11.1",
 		"react": "19.2.1",
-		"react-dom": "19.2.1"
+		"react-dom": "19.2.1",
+		"react-router-dom": "^7.14.1"
 	},
 	"devDependencies": {
 		"@cloudflare/vite-plugin": "1.15.3",
@@ -34,13 +37,15 @@
 	},
 	"private": true,
 	"scripts": {
-		"build": "tsc -b && vite build",
+		"build": "tsc -b && node -r ./scripts/node-web-globals.cjs ./node_modules/vite/bin/vite.js build",
 		"cf-typegen": "wrangler types",
-		"check": "tsc && vite build && wrangler deploy --dry-run",
+		"check": "tsc && node -r ./scripts/node-web-globals.cjs ./node_modules/vite/bin/vite.js build && wrangler deploy --dry-run",
+		"d1:init:local": "npm_config_loglevel=silent npx -y node@20 ./node_modules/wrangler/bin/wrangler.js d1 execute item-list-db --file=./db/schema.sql && npm_config_loglevel=silent npx -y node@20 ./node_modules/wrangler/bin/wrangler.js d1 execute item-list-db --file=./db/seed.sql",
+		"d1:init:remote": "npm_config_loglevel=silent npx -y node@20 ./node_modules/wrangler/bin/wrangler.js d1 execute item-list-db --remote --file=./db/schema.sql && npm_config_loglevel=silent npx -y node@20 ./node_modules/wrangler/bin/wrangler.js d1 execute item-list-db --remote --file=./db/seed.sql",
 		"deploy": "wrangler deploy",
-		"dev": "vite",
+		"dev": "node ./scripts/ensure-local-d1.cjs && node -r ./scripts/node-web-globals.cjs ./node_modules/vite/bin/vite.js",
 		"lint": "eslint .",
-		"preview": "npm run build && vite preview"
+		"preview": "npm run build && node -r ./scripts/node-web-globals.cjs ./node_modules/vite/bin/vite.js preview"
 	},
 	"type": "module"
 }

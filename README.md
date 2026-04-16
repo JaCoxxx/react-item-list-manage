@@ -70,18 +70,34 @@ npm run d1:init:local
 npm run d1:init:remote
 ```
 
+## Baidu OCR setup
+
+Configure Baidu OCR credentials (for shopping receipt recognition):
+
+```bash
+npx wrangler secret put BAIDU_OCR_API_KEY
+npx wrangler secret put BAIDU_OCR_SECRET_KEY
+```
+
+Optional endpoint override (default is `.../ocr/v1/shopping_receipt`):
+
+```bash
+npx wrangler secret put BAIDU_OCR_RECEIPT_API_URL
+```
+
 ## API overview
 
 Main backend endpoints:
 
 - `GET /api/setup/status` - verify whether schema and seed data are ready
-- `GET /api/base-options` - read grouped base data
-- `GET /api/items` / `POST /api/items` / `PATCH /api/items/:id`
+- `GET /api/base-options` / `POST /api/base-options` / `PATCH /api/base-options/:type/:id` / `DELETE /api/base-options/:type/:id`
+- `GET /api/items` / `POST /api/items` / `PATCH /api/items/:id` / `DELETE /api/items/:id`
 - `POST /api/stock/in` - create a stock batch and inbound movement
 - `POST /api/stock/out` - deduct stock using FEFO batch allocation
 - `GET /api/movements` - list inventory movements
 - `GET /api/dashboard` - inventory overview
 - `GET /api/alerts` - expiring and expired stock
+- `POST /api/ocr/baidu/receipt` - upload image and run Baidu shopping receipt OCR
 
 ## Production
 

@@ -21,8 +21,8 @@ createRoot(document.getElementById("root")!).render(
 					colorSplit: "#e5e5e5",
 					colorFillSecondary: "#f5f5f5",
 					colorFillTertiary: "#fafafa",
-					borderRadius: 12,
-					boxShadow: "0 12px 32px rgba(0, 0, 0, 0.08)",
+					borderRadius: 10,
+					boxShadow: "none",
 				},
 				components: {
 					Button: {

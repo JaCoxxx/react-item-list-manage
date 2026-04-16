@@ -1,5 +1,7 @@
 import {
 	AppstoreOutlined,
+	CameraOutlined,
+	DatabaseOutlined,
 	InboxOutlined,
 	MenuOutlined,
 	ToolOutlined,
@@ -12,6 +14,7 @@ import {
 	Drawer,
 	Grid,
 	Layout,
+	Menu,
 	Space,
 	Typography,
 } from "antd";
@@ -19,22 +22,26 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import { fetchJson } from "./lib/api";
 import type { ApiResponse, BaseOptionGroups, InventoryItem } from "./lib/types";
+import BaseOptionsPage from "./pages/BaseOptionsPage";
+import InventoryPage from "./pages/InventoryPage";
 import ItemMaintenancePage from "./pages/ItemMaintenancePage";
+import OcrUploadPage from "./pages/OcrUploadPage";
 import OverviewPage from "./pages/OverviewPage";
-import StockInPage from "./pages/StockInPage";
 import ToolsPage from "./pages/ToolsPage";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 const { useBreakpoint } = Grid;
-const APP_PATHS = ["/overview", "/stock-in", "/items", "/tools"] as const;
+const APP_PATHS = ["/overview", "/inventory", "/items", "/base-options", "/ocr-upload", "/tools"] as const;
 
 function getCurrentPath() {
 	if (typeof window === "undefined") {
 		return "/overview";
 	}
 
-	return window.location.pathname;
+	return window.location.pathname === "/stock-in"
+		? "/inventory"
+		: window.location.pathname;
 }
 
 function App() {
@@ -42,7 +49,6 @@ function App() {
 	const screens = useBreakpoint();
 	const isMobile = !screens.md;
 	const [refreshing, setRefreshing] = useState(false);
-	const [coreLoading, setCoreLoading] = useState(true);
 	const [coreError, setCoreError] = useState<string | null>(null);
 	const [baseOptions, setBaseOptions] = useState<BaseOptionGroups>({});
 	const [allItems, setAllItems] = useState<InventoryItem[]>([]);
@@ -76,7 +82,6 @@ function App() {
 					message.error(nextError);
 				}
 			} finally {
-				setCoreLoading(false);
 				setRefreshing(false);
 			}
 		},
@@ -103,18 +108,28 @@ function App() {
 		() => [
 			{
 				key: "/overview",
-				label: "库存总览",
+				label: "首页统计",
 				icon: <AppstoreOutlined />,
 			},
 			{
-				key: "/stock-in",
-				label: "新增库存",
+				key: "/inventory",
+				label: "库存列表",
 				icon: <InboxOutlined />,
 			},
 			{
 				key: "/items",
-				label: "物品维护",
+				label: "物品列表",
 				icon: <UnorderedListOutlined />,
+			},
+			{
+				key: "/base-options",
+				label: "基础数据",
+				icon: <DatabaseOutlined />,
+			},
+			{
+				key: "/ocr-upload",
+				label: "OCR上传",
+				icon: <CameraOutlined />,
 			},
 			{
 				key: "/tools",
@@ -148,24 +163,33 @@ function App() {
 		setCurrentPath(nextPath);
 		setMobileMenuOpen(false);
 	}, [currentPath]);
+	const handleDesktopMenuClick = useCallback((menuKey: string) => {
+		if (!APP_PATHS.includes(menuKey as (typeof APP_PATHS)[number])) {
+			return;
+		}
+
+		navigateTo(menuKey as (typeof APP_PATHS)[number]);
+	}, [navigateTo]);
 
 	const currentPage = useMemo(() => {
 		switch (resolvedPath) {
-			case "/stock-in":
+			case "/inventory":
 				return (
-					<StockInPage
+					<InventoryPage
 						baseOptions={baseOptions}
-						allItems={allItems}
-						coreLoading={coreLoading}
-						reloadCoreData={reloadCoreData}
 					/>
 				);
 			case "/items":
 				return (
 					<ItemMaintenancePage
 						baseOptions={baseOptions}
-						allItems={allItems}
-						coreLoading={coreLoading}
+						reloadCoreData={reloadCoreData}
+					/>
+				);
+			case "/base-options":
+				return (
+					<BaseOptionsPage
+						baseOptions={baseOptions}
 						reloadCoreData={reloadCoreData}
 					/>
 				);
@@ -178,16 +202,19 @@ function App() {
 						reloadCoreData={reloadCoreData}
 					/>
 				);
+			case "/ocr-upload":
+				return <OcrUploadPage />;
 			case "/overview":
 			default:
 				return (
 					<OverviewPage
 						baseOptions={baseOptions}
-						coreLoading={coreLoading}
+						onOpenInventory={() => navigateTo("/inventory")}
+						onOpenOcrUpload={() => navigateTo("/ocr-upload")}
 					/>
 				);
 		}
-	}, [allItems, baseOptions, coreLoading, refreshing, reloadCoreData, resolvedPath]);
+	}, [allItems, baseOptions, navigateTo, refreshing, reloadCoreData, resolvedPath]);
 
 	return (
 		<Layout className="app-layout">
@@ -209,23 +236,16 @@ function App() {
 									菜单
 								</Button>
 							</div>
-						) : null}
+						) : (
+							<Menu
+								mode="horizontal"
+								className="app-nav-menu"
+								items={navItems}
+								selectedKeys={[resolvedPath]}
+								onClick={({ key }) => handleDesktopMenuClick(key)}
+							/>
+						)}
 					</div>
-
-					{isMobile ? null : (
-						<Space wrap className="app-nav">
-							{navItems.map((item) => (
-								<Button
-									key={item.key}
-									type={resolvedPath === item.key ? "primary" : "default"}
-									icon={item.icon}
-									onClick={() => navigateTo(item.key as (typeof APP_PATHS)[number])}
-								>
-									{item.label}
-								</Button>
-							))}
-						</Space>
-					)}
 				</div>
 			</Header>
 
@@ -248,7 +268,7 @@ function App() {
 			<Drawer
 				title="页面导航"
 				placement="right"
-				width={280}
+				size={280}
 				open={isMobile && mobileMenuOpen}
 				onClose={() => setMobileMenuOpen(false)}
 				className="app-mobile-drawer"

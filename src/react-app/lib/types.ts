@@ -16,6 +16,7 @@ export type BaseOption = {
 	code: string;
 	name: string;
 	sortOrder: number;
+	isActive: boolean;
 	remark: string | null;
 	createdAt: string;
 	updatedAt: string;
@@ -40,6 +41,22 @@ export type InventoryItem = {
 	nearestExpiryDate: string | null;
 	expiredBatchCount: number;
 	expiringBatchCount: number;
+};
+
+export type StockBatch = {
+	id: string;
+	itemId: string;
+	quantity: number;
+	usedQuantity: number;
+	remainingQuantity: number;
+	purchasedAt: string;
+	productionDate: string | null;
+	expiryDate: string | null;
+	locationCode: string | null;
+	supplier: string | null;
+	unitPrice: number | null;
+	note: string | null;
+	createdAt: string;
 };
 
 export type StockInFormValues = {
@@ -76,4 +93,29 @@ export type SetupStatus = {
 
 export type ApiResponse<T> = {
 	data: T;
+};
+
+export type OcrFieldLine = {
+	id: string;
+	key: string;
+	label: string;
+	value: string;
+};
+
+export type OcrItemLine = {
+	id: string;
+	product: string;
+	quantity: string;
+	unitPrice: string;
+	subtotalAmount: string;
+};
+
+export type OcrReceiptResult = {
+	provider: "baidu";
+	model: "shopping_receipt";
+	wordsResultNum: number;
+	lines: string[];
+	fieldLines: OcrFieldLine[];
+	itemLines: OcrItemLine[];
+	raw: Record<string, unknown>;
 };

@@ -28,7 +28,7 @@ import type {
 	StockInFormValues,
 } from "../lib/types";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 type StockInPageProps = {
 	baseOptions: BaseOptionGroups;
@@ -97,16 +97,6 @@ function StockInPage({
 
 	return (
 		<div className="page-stack page-shell">
-			<div className="page-title-row">
-				<div>
-					<Title level={4} className="page-title">
-						新增库存
-					</Title>
-					<Text type="secondary">
-						按批次登记采购入库，记录数量、日期、位置和保质信息。
-					</Text>
-				</div>
-			</div>
 
 			<Row gutter={[20, 20]}>
 				<Col xs={24} xl={17} className="page-main-col">

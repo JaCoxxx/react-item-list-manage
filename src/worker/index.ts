@@ -3,6 +3,9 @@ import { Hono, type Context } from "hono";
 type AppBindings = {
 	Bindings: {
 		item_list_db: D1Database;
+		BAIDU_OCR_API_KEY?: string;
+		BAIDU_OCR_SECRET_KEY?: string;
+		BAIDU_OCR_RECEIPT_API_URL?: string;
 	};
 };
 
@@ -82,6 +85,42 @@ type DashboardRow = {
 	items_with_expired_stock: number;
 };
 
+type BaiduTokenCache = {
+	accessToken: string;
+	expiresAt: number;
+};
+
+type BaiduAccessTokenResponse = {
+	access_token?: string;
+	expires_in?: number;
+	error?: string;
+	error_description?: string;
+	error_code?: number;
+	error_msg?: string;
+};
+
+type BaiduOcrResponse = {
+	words_result?: unknown;
+	words_result_num?: number;
+	error_code?: number;
+	error_msg?: string;
+};
+
+type OcrFieldLine = {
+	id: string;
+	key: string;
+	label: string;
+	value: string;
+};
+
+type OcrItemLine = {
+	id: string;
+	product: string;
+	quantity: string;
+	unitPrice: string;
+	subtotalAmount: string;
+};
+
 class ApiError extends Error {
 	status: number;
 	details?: unknown;
@@ -98,6 +137,27 @@ const app = new Hono<AppBindings>();
 const DEFAULT_ALERT_WINDOW_DAYS = 7;
 const MAX_LIST_LIMIT = 200;
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const BAIDU_OAUTH_URL = "https://aip.baidubce.com/oauth/2.0/token";
+const DEFAULT_BAIDU_OCR_RECEIPT_URL =
+	"https://aip.baidubce.com/rest/2.0/ocr/v1/shopping_receipt";
+const BAIDU_OCR_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+const BAIDU_TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
+const BAIDU_RECEIPT_FIELD_LABELS: Record<string, string> = {
+	shop_name: "店铺名称",
+	receipt_num: "小票号",
+	machine_num: "机号",
+	employee_num: "员工号",
+	consumption_date: "消费日期",
+	consumption_time: "消费时间",
+	total_amount: "总金额",
+	change: "找零",
+	currency: "币种",
+	paid_amount: "实付金额",
+	discount: "优惠金额",
+	print_date: "打印日期",
+	print_time: "打印时间",
+};
+let baiduTokenCache: BaiduTokenCache | null = null;
 
 app.use("/api/*", async (c, next) => {
 	c.header("Cache-Control", "no-store");
@@ -158,13 +218,17 @@ const apiIndexHandler = (c: Context<AppBindings>) =>
 				"/api/health",
 				"/api/setup/status",
 				"/api/base-options",
+				"/api/base-options/:type",
+				"/api/base-options/:type/:id",
 				"/api/items",
 				"/api/items/:id",
 				"/api/stock/in",
+				"/api/stock/batches/:id",
 				"/api/stock/out",
 				"/api/movements",
 				"/api/dashboard",
 				"/api/alerts",
+				"/api/ocr/baidu/receipt",
 			],
 		},
 	});
@@ -231,16 +295,31 @@ app.get("/api/setup/status", async (c) => {
 
 app.get("/api/base-options", async (c) => {
 	const type = c.req.query("type");
+	const includeInactive = parseOptionalBoolean(c.req.query("includeInactive")) === true;
+	const isActive = parseOptionalBoolean(c.req.query("isActive"));
 	const db = c.env.item_list_db;
 
 	if (type) {
-		const options = await listBaseOptions(db, type);
+		const options = await listBaseOptions(db, type, {
+			includeInactive,
+			isActive,
+		});
 		return c.json({
 			data: {
 				type,
 				options,
 			},
 		});
+	}
+
+	const conditions: string[] = [];
+	const bindings: unknown[] = [];
+
+	if (typeof isActive === "boolean") {
+		conditions.push("is_active = ?");
+		bindings.push(isActive ? 1 : 0);
+	} else if (!includeInactive) {
+		conditions.push("is_active = 1");
 	}
 
 	const rows = await db
@@ -256,9 +335,10 @@ app.get("/api/base-options", async (c) => {
 				created_at,
 				updated_at
 			FROM base_options
-			WHERE is_active = 1
+			${conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : ""}
 			ORDER BY option_type ASC, sort_order ASC, option_name ASC`
 		)
+		.bind(...bindings)
 		.all<BaseOptionRow>();
 
 	const grouped = rows.results.reduce<Record<string, ReturnType<typeof mapBaseOption>[]>>(
@@ -276,10 +356,170 @@ app.get("/api/base-options", async (c) => {
 
 app.get("/api/base-options/:type", async (c) => {
 	const type = c.req.param("type");
+	const includeInactive = parseOptionalBoolean(c.req.query("includeInactive")) === true;
+	const isActive = parseOptionalBoolean(c.req.query("isActive"));
 	return c.json({
 		data: {
 			type,
-			options: await listBaseOptions(c.env.item_list_db, type),
+			options: await listBaseOptions(c.env.item_list_db, type, {
+				includeInactive,
+				isActive,
+			}),
+		},
+	});
+});
+
+app.get("/api/base-options/:type/:id", async (c) => {
+	const type = c.req.param("type");
+	const id = c.req.param("id");
+	const option = await getBaseOptionByTypeAndId(c.env.item_list_db, type, id);
+	return c.json({
+		data: mapBaseOption(option),
+	});
+});
+
+app.post("/api/base-options", async (c) => {
+	const payload = await readJson<Record<string, unknown>>(c);
+	const optionType = getRequiredString(payload, "optionType");
+	const optionCode = getRequiredString(payload, "optionCode");
+	const optionName = getRequiredString(payload, "optionName");
+	const sortOrder = getOptionalInteger(payload, "sortOrder") ?? 0;
+	const remark = getOptionalString(payload, "remark");
+	const isActive = Object.hasOwn(payload, "isActive")
+		? getRequiredBoolean(payload, "isActive")
+		: true;
+	const id = crypto.randomUUID();
+
+	await c.env.item_list_db
+		.prepare(
+			`INSERT INTO base_options (
+				id,
+				option_type,
+				option_code,
+				option_name,
+				sort_order,
+				is_active,
+				remark
+			) VALUES (?, ?, ?, ?, ?, ?, ?)`
+		)
+		.bind(id, optionType, optionCode, optionName, sortOrder, isActive ? 1 : 0, remark)
+		.run();
+
+	return c.json(
+		{
+			data: {
+				id,
+				created: true,
+			},
+		},
+		201
+	);
+});
+
+app.patch("/api/base-options/:type/:id", async (c) => {
+	const type = c.req.param("type");
+	const id = c.req.param("id");
+	const payload = await readJson<Record<string, unknown>>(c);
+	const db = c.env.item_list_db.withSession("first-primary");
+	const currentOption = await getBaseOptionByTypeAndId(db, type, id);
+	const assignments: string[] = [];
+	const bindings: unknown[] = [];
+
+	if (Object.hasOwn(payload, "optionCode")) {
+		const nextCode = getRequiredString(payload, "optionCode");
+		if (nextCode !== currentOption.option_code) {
+			const usageCount = await getBaseOptionUsageCount(db, type, currentOption.option_code);
+			if (usageCount > 0) {
+				throw new ApiError(409, "Cannot change code for an option in use.", {
+					type,
+					id,
+					code: currentOption.option_code,
+					usageCount,
+				});
+			}
+		}
+		assignments.push("option_code = ?");
+		bindings.push(nextCode);
+	}
+
+	if (Object.hasOwn(payload, "optionName")) {
+		assignments.push("option_name = ?");
+		bindings.push(getRequiredString(payload, "optionName"));
+	}
+
+	if (Object.hasOwn(payload, "sortOrder")) {
+		const sortOrder = payload.sortOrder;
+		if (
+			typeof sortOrder !== "number" ||
+			!Number.isInteger(sortOrder) ||
+			sortOrder < 0
+		) {
+			throw new ApiError(400, "sortOrder must be a non-negative integer.");
+		}
+		assignments.push("sort_order = ?");
+		bindings.push(sortOrder);
+	}
+
+	if (Object.hasOwn(payload, "remark")) {
+		assignments.push("remark = ?");
+		bindings.push(getOptionalString(payload, "remark"));
+	}
+
+	if (Object.hasOwn(payload, "isActive")) {
+		assignments.push("is_active = ?");
+		bindings.push(getRequiredBoolean(payload, "isActive") ? 1 : 0);
+	}
+
+	if (assignments.length === 0) {
+		throw new ApiError(400, "No valid fields were provided for update.");
+	}
+
+	assignments.push("updated_at = CURRENT_TIMESTAMP");
+	bindings.push(id, type);
+
+	await db
+		.prepare(
+			`UPDATE base_options
+			SET ${assignments.join(", ")}
+			WHERE id = ?
+				AND option_type = ?`
+		)
+		.bind(...bindings)
+		.run();
+
+	return c.json({
+		data: {
+			id,
+			updated: true,
+		},
+	});
+});
+
+app.delete("/api/base-options/:type/:id", async (c) => {
+	const type = c.req.param("type");
+	const id = c.req.param("id");
+	const db = c.env.item_list_db.withSession("first-primary");
+	const option = await getBaseOptionByTypeAndId(db, type, id);
+	const usageCount = await getBaseOptionUsageCount(db, type, option.option_code);
+
+	if (usageCount > 0) {
+		throw new ApiError(409, "Cannot delete option in use.", {
+			type,
+			id,
+			code: option.option_code,
+			usageCount,
+		});
+	}
+
+	await db
+		.prepare("DELETE FROM base_options WHERE id = ? AND option_type = ?")
+		.bind(id, type)
+		.run();
+
+	return c.json({
+		data: {
+			id,
+			deleted: true,
 		},
 	});
 });
@@ -585,6 +825,42 @@ app.patch("/api/items/:id", async (c) => {
 	});
 });
 
+app.delete("/api/items/:id", async (c) => {
+	const itemId = c.req.param("id");
+	const db = c.env.item_list_db.withSession("first-primary");
+
+	await ensureItemExists(db, itemId);
+
+	const related = await db
+		.prepare(
+			`SELECT
+				(SELECT COUNT(*) FROM stock_batches WHERE item_id = ?) AS batch_count,
+				(SELECT COUNT(*) FROM stock_movements WHERE item_id = ?) AS movement_count`
+		)
+		.bind(itemId, itemId)
+		.first<{ batch_count: number; movement_count: number }>();
+
+	const batchCount = related?.batch_count ?? 0;
+	const movementCount = related?.movement_count ?? 0;
+
+	if (batchCount > 0 || movementCount > 0) {
+		throw new ApiError(409, "Cannot delete item with stock history.", {
+			itemId,
+			batchCount,
+			movementCount,
+		});
+	}
+
+	await db.prepare("DELETE FROM items WHERE id = ?").bind(itemId).run();
+
+	return c.json({
+		data: {
+			id: itemId,
+			deleted: true,
+		},
+	});
+});
+
 app.post("/api/stock/in", async (c) => {
 	const session = c.env.item_list_db.withSession("first-primary");
 	const payload = await readJson<Record<string, unknown>>(c);
@@ -682,6 +958,125 @@ app.post("/api/stock/in", async (c) => {
 		},
 		201
 	);
+});
+
+app.patch("/api/stock/batches/:id", async (c) => {
+	const batchId = c.req.param("id");
+	const session = c.env.item_list_db.withSession("first-primary");
+	const payload = await readJson<Record<string, unknown>>(c);
+	const batch = await session
+		.prepare(
+			`SELECT
+				id,
+				item_id,
+				batch_quantity,
+				purchased_at,
+				production_date,
+				expiry_date,
+				location_code,
+				supplier,
+				unit_price,
+				note,
+				created_at,
+				used_quantity,
+				remaining_quantity
+			FROM batch_inventory_view
+			WHERE id = ?`
+		)
+		.bind(batchId)
+		.first<BatchInventoryRow>();
+
+	if (!batch) {
+		throw new ApiError(404, "Batch not found.");
+	}
+
+	const assignments: string[] = [];
+	const bindings: unknown[] = [];
+
+	let nextProductionDate = batch.production_date;
+	let nextExpiryDate = batch.expiry_date;
+
+	if (Object.hasOwn(payload, "quantity")) {
+		const quantity = getPositiveNumber(payload, "quantity");
+		const usedQuantity = roundQuantity(batch.used_quantity);
+
+		if (quantity < usedQuantity) {
+			throw new ApiError(409, "quantity cannot be less than used stock.", {
+				batchId,
+				usedQuantity,
+			});
+		}
+
+		assignments.push("quantity = ?");
+		bindings.push(quantity);
+	}
+
+	if (Object.hasOwn(payload, "purchasedAt")) {
+		const purchasedAt = getOptionalDate(payload, "purchasedAt");
+		if (!purchasedAt) {
+			throw new ApiError(400, "purchasedAt must use YYYY-MM-DD format.");
+		}
+		assignments.push("purchased_at = ?");
+		bindings.push(purchasedAt);
+	}
+
+	if (Object.hasOwn(payload, "productionDate")) {
+		nextProductionDate = getOptionalDate(payload, "productionDate");
+		assignments.push("production_date = ?");
+		bindings.push(nextProductionDate);
+	}
+
+	if (Object.hasOwn(payload, "expiryDate")) {
+		nextExpiryDate = getOptionalDate(payload, "expiryDate");
+		assignments.push("expiry_date = ?");
+		bindings.push(nextExpiryDate);
+	}
+
+	if (nextProductionDate && nextExpiryDate && nextExpiryDate < nextProductionDate) {
+		throw new ApiError(400, "expiryDate must be on or after productionDate.");
+	}
+
+	if (Object.hasOwn(payload, "locationCode")) {
+		const locationCode = getOptionalString(payload, "locationCode");
+		await ensureOptionExists(session, "location", locationCode);
+		assignments.push("location_code = ?");
+		bindings.push(locationCode);
+	}
+
+	if (Object.hasOwn(payload, "supplier")) {
+		assignments.push("supplier = ?");
+		bindings.push(getOptionalString(payload, "supplier"));
+	}
+
+	if (Object.hasOwn(payload, "unitPrice")) {
+		assignments.push("unit_price = ?");
+		bindings.push(getOptionalNonNegativeNumber(payload, "unitPrice"));
+	}
+
+	if (Object.hasOwn(payload, "note")) {
+		assignments.push("note = ?");
+		bindings.push(getOptionalString(payload, "note"));
+	}
+
+	if (assignments.length === 0) {
+		throw new ApiError(400, "No valid fields were provided for update.");
+	}
+
+	bindings.push(batchId);
+
+	await session
+		.prepare(`UPDATE stock_batches SET ${assignments.join(", ")} WHERE id = ?`)
+		.bind(...bindings)
+		.run();
+
+	return c.json({
+		data: {
+			batchId,
+			itemId: batch.item_id,
+			currentQuantity: await getCurrentQuantity(session, batch.item_id),
+			updated: true,
+		},
+	});
 });
 
 app.post("/api/stock/out", async (c) => {
@@ -981,6 +1376,51 @@ app.get("/api/alerts", async (c) => {
 	});
 });
 
+app.post("/api/ocr/baidu/receipt", async (c) => {
+	let formData: FormData;
+	try {
+		formData = await c.req.formData();
+	} catch {
+		throw new ApiError(400, "Request body must be multipart/form-data.");
+	}
+
+	const imageFile = formData.get("image");
+	if (!(imageFile instanceof File)) {
+		throw new ApiError(400, "image file is required.");
+	}
+
+	if (!imageFile.type.startsWith("image/")) {
+		throw new ApiError(400, "Only image file uploads are supported.");
+	}
+
+	const imageBuffer = await imageFile.arrayBuffer();
+	if (imageBuffer.byteLength <= 0) {
+		throw new ApiError(400, "Uploaded image cannot be empty.");
+	}
+
+	if (imageBuffer.byteLength > BAIDU_OCR_IMAGE_MAX_BYTES) {
+		throw new ApiError(400, "Uploaded image is too large.");
+	}
+
+	const ocrResult = await requestBaiduShoppingReceiptOcr(c.env, imageBuffer);
+	const parsedResult = parseBaiduReceiptResult(ocrResult);
+
+	return c.json({
+		data: {
+			provider: "baidu",
+			model: "shopping_receipt",
+			wordsResultNum:
+				typeof ocrResult.words_result_num === "number"
+					? ocrResult.words_result_num
+					: parsedResult.lines.length,
+			lines: parsedResult.lines,
+			fieldLines: parsedResult.fieldLines,
+			itemLines: parsedResult.itemLines,
+			raw: ocrResult,
+		},
+	});
+});
+
 function isSchemaMissingError(error: unknown) {
 	return (
 		error instanceof Error &&
@@ -1151,7 +1591,543 @@ function roundQuantity(value: number) {
 	return Number.parseFloat(value.toFixed(3));
 }
 
-async function listBaseOptions(db: Queryable, type: string) {
+function requireEnvValue(value: string | undefined, fieldName: string) {
+	const normalized = value?.trim();
+	if (!normalized) {
+		throw new ApiError(503, `${fieldName} is not configured.`);
+	}
+	return normalized;
+}
+
+function getBaiduReceiptApiUrl(env: AppBindings["Bindings"]) {
+	const configured = env.BAIDU_OCR_RECEIPT_API_URL?.trim();
+	return configured && configured.length > 0 ? configured : DEFAULT_BAIDU_OCR_RECEIPT_URL;
+}
+
+function toBaiduError(payload: unknown) {
+	if (typeof payload !== "object" || payload === null) {
+		return null;
+	}
+
+	const errorRecord = payload as Record<string, unknown>;
+	const errorCode = errorRecord.error_code;
+	const errorMessage = errorRecord.error_msg;
+	if (typeof errorCode !== "number" || typeof errorMessage !== "string") {
+		return null;
+	}
+
+	return {
+		code: errorCode,
+		message: errorMessage,
+	};
+}
+
+function isBaiduAccessTokenExpired(payload: unknown) {
+	const error = toBaiduError(payload);
+	return Boolean(error && (error.code === 110 || error.code === 111));
+}
+
+async function readJsonObjectResponse(response: Response) {
+	const text = await response.text();
+	if (text.length === 0) {
+		return null;
+	}
+
+	try {
+		const parsed = JSON.parse(text) as unknown;
+		if (typeof parsed !== "object" || parsed === null) {
+			return null;
+		}
+		return parsed as Record<string, unknown>;
+	} catch {
+		return null;
+	}
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+	const bytes = new Uint8Array(buffer);
+	const chunkSize = 0x8000;
+	let binary = "";
+	for (let index = 0; index < bytes.length; index += chunkSize) {
+		const chunk = bytes.subarray(index, index + chunkSize);
+		binary += String.fromCharCode(...chunk);
+	}
+	return btoa(binary);
+}
+
+async function getBaiduAccessToken(env: AppBindings["Bindings"]) {
+	const now = Date.now();
+	if (baiduTokenCache && baiduTokenCache.expiresAt > now) {
+		return baiduTokenCache.accessToken;
+	}
+
+	const apiKey = requireEnvValue(env.BAIDU_OCR_API_KEY, "BAIDU_OCR_API_KEY");
+	const secretKey = requireEnvValue(env.BAIDU_OCR_SECRET_KEY, "BAIDU_OCR_SECRET_KEY");
+	const tokenUrl = `${BAIDU_OAUTH_URL}?grant_type=client_credentials&client_id=${encodeURIComponent(apiKey)}&client_secret=${encodeURIComponent(secretKey)}`;
+	const response = await fetch(tokenUrl, {
+		method: "POST",
+	});
+	const payload = await readJsonObjectResponse(response);
+	const baiduError = toBaiduError(payload);
+
+	if (!response.ok || baiduError) {
+		throw new ApiError(502, "Failed to fetch Baidu OCR access token.", {
+			status: response.status,
+			baiduError,
+		});
+	}
+
+	const tokenPayload = payload as BaiduAccessTokenResponse | null;
+	const accessToken = tokenPayload?.access_token;
+	if (typeof accessToken !== "string" || accessToken.length === 0) {
+		throw new ApiError(502, "Invalid Baidu OCR access token response.");
+	}
+
+	const expiresInSeconds =
+		typeof tokenPayload?.expires_in === "number" && tokenPayload.expires_in > 0
+			? tokenPayload.expires_in
+			: 60 * 60;
+	const ttlMs = Math.max(
+		30 * 1000,
+		expiresInSeconds * 1000 - BAIDU_TOKEN_REFRESH_BUFFER_MS
+	);
+	baiduTokenCache = {
+		accessToken,
+		expiresAt: now + ttlMs,
+	};
+
+	return accessToken;
+}
+
+async function doBaiduReceiptOcrRequest(
+	env: AppBindings["Bindings"],
+	imageBase64: string,
+	accessToken: string
+) {
+	const response = await fetch(
+		`${getBaiduReceiptApiUrl(env)}?access_token=${encodeURIComponent(accessToken)}`,
+		{
+			method: "POST",
+			headers: {
+				"content-type": "application/x-www-form-urlencoded",
+			},
+			body: new URLSearchParams({
+				image: imageBase64,
+				detect_direction: "true",
+			}),
+		}
+	);
+	const payload = await readJsonObjectResponse(response);
+	return {
+		response,
+		payload,
+	};
+}
+
+async function requestBaiduShoppingReceiptOcr(
+	env: AppBindings["Bindings"],
+	imageBuffer: ArrayBuffer
+) {
+	const imageBase64 = arrayBufferToBase64(imageBuffer);
+	let accessToken = await getBaiduAccessToken(env);
+	let { response, payload } = await doBaiduReceiptOcrRequest(env, imageBase64, accessToken);
+
+	if (isBaiduAccessTokenExpired(payload)) {
+		baiduTokenCache = null;
+		accessToken = await getBaiduAccessToken(env);
+		const retried = await doBaiduReceiptOcrRequest(env, imageBase64, accessToken);
+		response = retried.response;
+		payload = retried.payload;
+	}
+
+	const baiduError = toBaiduError(payload);
+	if (!response.ok || baiduError) {
+		throw new ApiError(502, "Baidu OCR request failed.", {
+			status: response.status,
+			baiduError,
+		});
+	}
+
+	if (!payload) {
+		throw new ApiError(502, "Baidu OCR returned an empty response.");
+	}
+
+	return payload as BaiduOcrResponse;
+}
+
+function parseBaiduReceiptResult(payload: BaiduOcrResponse) {
+	const fieldLines = extractBaiduReceiptFieldLines(payload);
+	const itemLines = extractBaiduReceiptItemLines(payload);
+	const lines = [
+		...fieldLines.map((field) => `${field.label}：${field.value}`),
+		...itemLines.map(
+			(item, index) =>
+				`商品${index + 1}：${item.product || "-"}，数量 ${item.quantity || "-"}`
+		),
+	];
+
+	if (lines.length === 0) {
+		lines.push(...extractBaiduFallbackTextLines(payload));
+	}
+
+	return {
+		fieldLines,
+		itemLines,
+		lines,
+	};
+}
+
+function extractBaiduReceiptFieldLines(payload: BaiduOcrResponse) {
+	const receipts = getBaiduReceiptRecords(payload);
+	const lines: OcrFieldLine[] = [];
+
+	receipts.forEach((receipt, receiptIndex) => {
+		Object.entries(receipt).forEach(([fieldKey, fieldValue]) => {
+			if (fieldKey === "table" || fieldKey === "table_row_num") {
+				return;
+			}
+
+			const value = extractFirstWord(fieldValue);
+			if (value === null) {
+				return;
+			}
+
+			lines.push({
+				id: `field-${receiptIndex}-${fieldKey}-${lines.length}`,
+				key: fieldKey,
+				label: BAIDU_RECEIPT_FIELD_LABELS[fieldKey] ?? fieldKey,
+				value,
+			});
+		});
+	});
+
+	return lines;
+}
+
+function extractBaiduReceiptItemLines(payload: BaiduOcrResponse) {
+	const receipts = getBaiduReceiptRecords(payload);
+	const items: OcrItemLine[] = [];
+
+	receipts.forEach((receipt, receiptIndex) => {
+		const tableValue = receipt.table;
+		if (!Array.isArray(tableValue)) {
+			return;
+		}
+
+		const rows = tableValue
+			.map(normalizeBaiduReceiptTableRow)
+			.filter(
+				(row) =>
+					row.product.length > 0 ||
+					row.quantity.length > 0 ||
+					row.unitPrice.length > 0 ||
+					row.subtotalAmount.length > 0
+			);
+
+		const mergedRows = mergeBaiduReceiptRows(rows);
+		mergedRows.forEach((row, rowIndex) => {
+			items.push({
+				id: `item-${receiptIndex}-${rowIndex}`,
+				...row,
+			});
+		});
+	});
+
+	return items;
+}
+
+function normalizeBaiduReceiptTableRow(value: unknown) {
+	if (typeof value !== "object" || value === null) {
+		return {
+			product: "",
+			quantity: "",
+			unitPrice: "",
+			subtotalAmount: "",
+		};
+	}
+
+	const row = value as Record<string, unknown>;
+	return {
+		product:
+			extractFirstWord(row.product) ??
+			extractFirstWord(row.item_name) ??
+			extractFirstWord(row.name) ??
+			"",
+		quantity: extractFirstWord(row.quantity) ?? extractFirstWord(row.qty) ?? "",
+		unitPrice:
+			extractFirstWord(row.unit_price) ?? extractFirstWord(row.price) ?? "",
+		subtotalAmount:
+			extractFirstWord(row.subtotal_amount) ??
+			extractFirstWord(row.amount) ??
+			"",
+	};
+}
+
+function mergeBaiduReceiptRows(
+	rows: Array<{
+		product: string;
+		quantity: string;
+		unitPrice: string;
+		subtotalAmount: string;
+	}>
+) {
+	const merged: Array<{
+		product: string;
+		quantity: string;
+		unitPrice: string;
+		subtotalAmount: string;
+	}> = [];
+	let current:
+		| {
+				product: string;
+				quantity: string;
+				unitPrice: string;
+				subtotalAmount: string;
+		  }
+		| null = null;
+
+	for (const row of rows) {
+		if (!current) {
+			current = { ...row };
+			continue;
+		}
+
+		if (shouldMergeBaiduReceiptRows(current, row)) {
+			current = mergeBaiduReceiptRow(current, row);
+			continue;
+		}
+
+		merged.push(current);
+		current = { ...row };
+	}
+
+	if (current) {
+		merged.push(current);
+	}
+
+	return merged;
+}
+
+function shouldMergeBaiduReceiptRows(
+	current: {
+		product: string;
+		quantity: string;
+		unitPrice: string;
+		subtotalAmount: string;
+	},
+	next: {
+		product: string;
+		quantity: string;
+		unitPrice: string;
+		subtotalAmount: string;
+	}
+) {
+	const nextHasOnlyProduct =
+		next.product.length > 0 &&
+		next.quantity.length === 0 &&
+		next.unitPrice.length === 0 &&
+		next.subtotalAmount.length === 0;
+	const currentHasAmountOrQuantity =
+		current.quantity.length > 0 ||
+		current.unitPrice.length > 0 ||
+		current.subtotalAmount.length > 0;
+
+	if (nextHasOnlyProduct && currentHasAmountOrQuantity) {
+		return true;
+	}
+
+	if (current.product.length === 0 && next.product.length > 0) {
+		return true;
+	}
+
+	if (looksLikeSkuCode(current.product) && nextHasOnlyProduct) {
+		return true;
+	}
+
+	if (
+		current.quantity.length === 0 &&
+		next.quantity.length > 0 &&
+		next.product.length === 0
+	) {
+		return true;
+	}
+
+	if (
+		current.unitPrice.length === 0 &&
+		next.unitPrice.length > 0 &&
+		next.product.length === 0
+	) {
+		return true;
+	}
+
+	if (
+		current.subtotalAmount.length === 0 &&
+		next.subtotalAmount.length > 0 &&
+		next.product.length === 0
+	) {
+		return true;
+	}
+
+	return false;
+}
+
+function mergeBaiduReceiptRow(
+	current: {
+		product: string;
+		quantity: string;
+		unitPrice: string;
+		subtotalAmount: string;
+	},
+	next: {
+		product: string;
+		quantity: string;
+		unitPrice: string;
+		subtotalAmount: string;
+	}
+) {
+	const merged = { ...current };
+
+	if (next.product.length > 0) {
+		if (merged.product.length === 0) {
+			merged.product = next.product;
+		} else if (looksLikeSkuCode(merged.product) && !looksLikeSkuCode(next.product)) {
+			merged.product = next.product;
+		}
+	}
+
+	if (merged.quantity.length === 0 && next.quantity.length > 0) {
+		merged.quantity = next.quantity;
+	}
+
+	if (merged.unitPrice.length === 0 && next.unitPrice.length > 0) {
+		merged.unitPrice = next.unitPrice;
+	}
+
+	if (merged.subtotalAmount.length === 0 && next.subtotalAmount.length > 0) {
+		merged.subtotalAmount = next.subtotalAmount;
+	}
+
+	return merged;
+}
+
+function looksLikeSkuCode(value: string) {
+	const trimmed = value.trim();
+	if (trimmed.length < 4) {
+		return false;
+	}
+
+	if (/[\u4e00-\u9fff]/.test(trimmed)) {
+		return false;
+	}
+
+	return /^[A-Za-z0-9-]+$/.test(trimmed);
+}
+
+function getBaiduReceiptRecords(payload: BaiduOcrResponse) {
+	const wordsResult = payload.words_result;
+	if (!wordsResult) {
+		return [];
+	}
+
+	if (Array.isArray(wordsResult)) {
+		return wordsResult.filter(
+			(entry): entry is Record<string, unknown> =>
+				typeof entry === "object" && entry !== null
+		);
+	}
+
+	if (typeof wordsResult === "object" && wordsResult !== null) {
+		return [wordsResult as Record<string, unknown>];
+	}
+
+	return [];
+}
+
+function extractBaiduFallbackTextLines(payload: BaiduOcrResponse) {
+	const wordsResult = payload.words_result;
+	if (!wordsResult) {
+		return [];
+	}
+
+	if (Array.isArray(wordsResult)) {
+		return wordsResult
+			.map(extractLineFromWordResult)
+			.filter((line): line is string => line !== null);
+	}
+
+	if (typeof wordsResult === "object") {
+		return Object.values(wordsResult)
+			.map(extractLineFromWordResult)
+			.filter((line): line is string => line !== null);
+	}
+
+	return [];
+}
+
+function extractLineFromWordResult(value: unknown) {
+	const word = extractFirstWord(value);
+	return word ?? null;
+}
+
+function extractFirstWord(value: unknown): string | null {
+	if (typeof value === "string") {
+		const text = value.trim();
+		return text.length > 0 ? text : null;
+	}
+
+	if (Array.isArray(value)) {
+		for (const entry of value) {
+			const extracted = extractFirstWord(entry);
+			if (extracted !== null) {
+				return extracted;
+			}
+		}
+		return null;
+	}
+
+	if (typeof value !== "object" || value === null) {
+		return null;
+	}
+
+	const entry = value as Record<string, unknown>;
+	const directCandidates = [entry.word, entry.words, entry.value, entry.text];
+	for (const candidate of directCandidates) {
+		if (typeof candidate === "string") {
+			const text = candidate.trim();
+			if (text.length > 0) {
+				return text;
+			}
+		}
+	}
+
+	for (const nestedValue of Object.values(entry)) {
+		const extracted = extractFirstWord(nestedValue);
+		if (extracted !== null) {
+			return extracted;
+		}
+	}
+
+	return null;
+}
+
+async function listBaseOptions(
+	db: Queryable,
+	type: string,
+	options?: {
+		includeInactive?: boolean;
+		isActive?: boolean;
+	}
+) {
+	const conditions = ["option_type = ?"];
+	const bindings: unknown[] = [type];
+
+	if (typeof options?.isActive === "boolean") {
+		conditions.push("is_active = ?");
+		bindings.push(options.isActive ? 1 : 0);
+	} else if (!options?.includeInactive) {
+		conditions.push("is_active = 1");
+	}
+
 	const rows = await db
 		.prepare(
 			`SELECT
@@ -1165,14 +2141,86 @@ async function listBaseOptions(db: Queryable, type: string) {
 				created_at,
 				updated_at
 			FROM base_options
-			WHERE option_type = ?
-				AND is_active = 1
+			WHERE ${conditions.join(" AND ")}
 			ORDER BY sort_order ASC, option_name ASC`
 		)
-		.bind(type)
+		.bind(...bindings)
 		.all<BaseOptionRow>();
 
 	return rows.results.map(mapBaseOption);
+}
+
+async function getBaseOptionByTypeAndId(db: Queryable, type: string, id: string) {
+	const option = await db
+		.prepare(
+			`SELECT
+				id,
+				option_type,
+				option_code,
+				option_name,
+				sort_order,
+				is_active,
+				remark,
+				created_at,
+				updated_at
+			FROM base_options
+			WHERE option_type = ?
+				AND id = ?`
+		)
+		.bind(type, id)
+		.first<BaseOptionRow>();
+
+	if (!option) {
+		throw new ApiError(404, "Base option not found.");
+	}
+
+	return option;
+}
+
+async function getBaseOptionUsageCount(db: Queryable, type: string, code: string) {
+	if (type === "category") {
+		const row = await db
+			.prepare("SELECT COUNT(*) AS count FROM items WHERE category_code = ?")
+			.bind(code)
+			.first<{ count: number }>();
+		return row?.count ?? 0;
+	}
+
+	if (type === "unit") {
+		const row = await db
+			.prepare("SELECT COUNT(*) AS count FROM items WHERE unit_code = ?")
+			.bind(code)
+			.first<{ count: number }>();
+		return row?.count ?? 0;
+	}
+
+	if (type === "location") {
+		const row = await db
+			.prepare(
+				`SELECT
+					(SELECT COUNT(*) FROM items WHERE default_location_code = ?) AS item_count,
+					(SELECT COUNT(*) FROM stock_batches WHERE location_code = ?) AS batch_count,
+					(SELECT COUNT(*) FROM stock_movements WHERE location_code = ?) AS movement_count`
+			)
+			.bind(code, code, code)
+			.first<{
+				item_count: number;
+				batch_count: number;
+				movement_count: number;
+			}>();
+
+		return (row?.item_count ?? 0) + (row?.batch_count ?? 0) + (row?.movement_count ?? 0);
+	}
+
+	if (type === "outbound_reason") {
+		const row = await db
+			.prepare("SELECT COUNT(*) AS count FROM stock_movements WHERE reason_code = ?")
+			.bind(code)
+			.first<{ count: number }>();
+		return row?.count ?? 0;
+	}
+
+	return 0;
 }
 
 async function ensureOptionExists(
@@ -1250,6 +2298,7 @@ function mapBaseOption(row: BaseOptionRow) {
 		code: row.option_code,
 		name: row.option_name,
 		sortOrder: row.sort_order,
+		isActive: row.is_active === 1,
 		remark: row.remark,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,

@@ -4,6 +4,8 @@ import {
 	DatabaseOutlined,
 	InboxOutlined,
 	MenuOutlined,
+	RocketOutlined,
+	TagsOutlined,
 	ToolOutlined,
 	UnorderedListOutlined,
 } from "@ant-design/icons";
@@ -27,12 +29,14 @@ import InventoryPage from "./pages/InventoryPage";
 import ItemMaintenancePage from "./pages/ItemMaintenancePage";
 import OcrUploadPage from "./pages/OcrUploadPage";
 import OverviewPage from "./pages/OverviewPage";
+import QuickStockPage from "./pages/QuickStockPage";
+import TagMaintenancePage from "./pages/TagMaintenancePage";
 import ToolsPage from "./pages/ToolsPage";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 const { useBreakpoint } = Grid;
-const APP_PATHS = ["/overview", "/inventory", "/items", "/base-options", "/ocr-upload", "/tools"] as const;
+const APP_PATHS = ["/overview", "/inventory", "/quick-stock", "/items", "/tags", "/base-options", "/ocr-upload", "/tools"] as const;
 
 function getCurrentPath() {
 	if (typeof window === "undefined") {
@@ -117,9 +121,19 @@ function App() {
 				icon: <InboxOutlined />,
 			},
 			{
+				key: "/quick-stock",
+				label: "快速操作",
+				icon: <RocketOutlined />,
+			},
+			{
 				key: "/items",
 				label: "物品列表",
 				icon: <UnorderedListOutlined />,
+			},
+			{
+				key: "/tags",
+				label: "标签维护",
+				icon: <TagsOutlined />,
 			},
 			{
 				key: "/base-options",
@@ -186,6 +200,13 @@ function App() {
 						reloadCoreData={reloadCoreData}
 					/>
 				);
+			case "/quick-stock":
+				return (
+					<QuickStockPage
+						baseOptions={baseOptions}
+						reloadCoreData={reloadCoreData}
+					/>
+				);
 			case "/base-options":
 				return (
 					<BaseOptionsPage
@@ -193,6 +214,8 @@ function App() {
 						reloadCoreData={reloadCoreData}
 					/>
 				);
+			case "/tags":
+				return <TagMaintenancePage reloadCoreData={reloadCoreData} />;
 			case "/tools":
 				return (
 					<ToolsPage

@@ -58,9 +58,22 @@ function ItemMaintenancePage({
 	const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
 	const [submittingItem, setSubmittingItem] = useState(false);
 	const [rowActionKey, setRowActionKey] = useState<string | null>(null);
+	const [selectedTagNames, setSelectedTagNames] = useState<string[]>([]);
 	const categoryOptions = baseOptions.category ?? EMPTY_OPTIONS;
 	const locationOptions = baseOptions.location ?? EMPTY_OPTIONS;
 	const unitOptions = baseOptions.unit ?? EMPTY_OPTIONS;
+	const tagOptions = useMemo(() => {
+		const values = new Set<string>(selectedTagNames);
+		items.forEach((item) => {
+			item.tagNames.forEach((tagName) => values.add(tagName));
+		});
+		return Array.from(values)
+			.sort((left, right) => left.localeCompare(right, "zh-Hans-CN"))
+			.map((tagName) => ({
+				label: tagName,
+				value: tagName,
+			}));
+	}, [items, selectedTagNames]);
 
 	const editingItem = useMemo(
 		() => items.find((item) => item.id === editingItemId) ?? null,
@@ -75,9 +88,20 @@ function ItemMaintenancePage({
 		setListLoading(true);
 
 		try {
+			const query = new URLSearchParams();
+			query.set("limit", "200");
+			if (selectedTagNames.length > 0) {
+				query.set("tagNames", selectedTagNames.join(","));
+			}
+
+			const activeQuery = new URLSearchParams(query);
+			activeQuery.set("isActive", "true");
+			const inactiveQuery = new URLSearchParams(query);
+			inactiveQuery.set("isActive", "false");
+
 			const [activeResponse, inactiveResponse] = await Promise.all([
-				fetchJson<ApiResponse<InventoryItem[]>>("/api/items?limit=200&isActive=true"),
-				fetchJson<ApiResponse<InventoryItem[]>>("/api/items?limit=200&isActive=false"),
+				fetchJson<ApiResponse<InventoryItem[]>>(`/api/items?${activeQuery.toString()}`),
+				fetchJson<ApiResponse<InventoryItem[]>>(`/api/items?${inactiveQuery.toString()}`),
 			]);
 
 			const merged = new Map<string, InventoryItem>();
@@ -101,7 +125,7 @@ function ItemMaintenancePage({
 		} finally {
 			setListLoading(false);
 		}
-	}, [message]);
+	}, [message, selectedTagNames]);
 
 	useEffect(() => {
 		void loadItems();
@@ -153,6 +177,7 @@ function ItemMaintenancePage({
 				itemCode: normalizeOptionalText(values.itemCode),
 				categoryCode: values.categoryCode,
 				unitCode: values.unitCode,
+				tagNames: values.tagNames ?? [],
 				defaultLocationCode: values.defaultLocationCode,
 				defaultShelfLifeDays: values.defaultShelfLifeDays,
 				minStockAlert: values.minStockAlert ?? 0,
@@ -265,6 +290,15 @@ function ItemMaintenancePage({
 					<Space direction="vertical" size={2}>
 						<Text strong>{item.name}</Text>
 						<Text type="secondary">{item.code ?? "未设置编码"}</Text>
+						{item.tagNames.length > 0 ? (
+							<Space size={[4, 4]} wrap>
+								{item.tagNames.map((tagName) => (
+									<Tag key={`${item.id}:${tagName}`} className="status-tag">
+										{tagName}
+									</Tag>
+								))}
+							</Space>
+						) : null}
 					</Space>
 				),
 			},
@@ -295,6 +329,16 @@ function ItemMaintenancePage({
 		<div className="page-stack page-shell">
 			<div className="page-title-row">
 				<Space className="page-header-actions">
+					<Select
+						mode="multiple"
+						allowClear
+						placeholder="按标签筛选"
+						value={selectedTagNames}
+						options={tagOptions}
+						onChange={(values) => setSelectedTagNames(values)}
+						optionFilterProp="label"
+						className="tag-filter-select"
+					/>
 					<Button
 						type="primary"
 						className="page-action-button"
@@ -320,6 +364,15 @@ function ItemMaintenancePage({
 								<div className="item-compact-main">
 									<Text strong>{item.name}</Text>
 									<Text type="secondary">{item.code ?? "未设置编码"}</Text>
+									{item.tagNames.length > 0 ? (
+										<Space size={[4, 4]} wrap>
+											{item.tagNames.map((tagName) => (
+												<Tag key={`${item.id}:${tagName}`} className="status-tag">
+													{tagName}
+												</Tag>
+											))}
+										</Space>
+									) : null}
 								</div>
 								<Space size={8} className="item-compact-side">
 									<Text>
@@ -377,6 +430,19 @@ function ItemMaintenancePage({
 							</Descriptions.Item>
 							<Descriptions.Item label="默认位置">
 								{findOptionName(locationOptions, detailItem.defaultLocationCode)}
+							</Descriptions.Item>
+							<Descriptions.Item label="标签">
+								{detailItem.tagNames.length > 0 ? (
+									<Space size={[4, 4]} wrap>
+										{detailItem.tagNames.map((tagName) => (
+											<Tag key={`${detailItem.id}:${tagName}`} className="status-tag">
+												{tagName}
+											</Tag>
+										))}
+									</Space>
+								) : (
+									"无"
+								)}
 							</Descriptions.Item>
 							<Descriptions.Item label="默认保质期">
 								{detailItem.defaultShelfLifeDays
@@ -507,6 +573,16 @@ function ItemMaintenancePage({
 								label: option.name,
 								value: option.code,
 							}))}
+						/>
+					</Form.Item>
+					<Form.Item label="标签" name="tagNames">
+						<Select
+							mode="tags"
+							allowClear
+							placeholder="可输入多个标签"
+							options={tagOptions}
+							tokenSeparators={[",", "，"]}
+							optionFilterProp="label"
 						/>
 					</Form.Item>
 					<Form.Item label="默认位置" name="defaultLocationCode">

@@ -20,5 +20,17 @@
 			"database_name": "item-list-db",
 			"database_id": "2c939227-26a9-4d6b-99eb-a9e9118643b5"
 		}
-	]
+	],
+	"env": {
+		"remote_db": {
+			"d1_databases": [
+				{
+					"binding": "item_list_db",
+					"database_name": "item-list-db",
+					"database_id": "2c939227-26a9-4d6b-99eb-a9e9118643b5",
+					"remote": true
+				}
+			]
+		}
+	}
 }

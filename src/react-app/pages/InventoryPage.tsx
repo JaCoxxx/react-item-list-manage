@@ -88,11 +88,13 @@ function InventoryPage({ baseOptions }: InventoryPageProps) {
 	const [appliedSearch, setAppliedSearch] = useState("");
 	const [categoryCode, setCategoryCode] = useState<string | undefined>();
 	const [locationCode, setLocationCode] = useState<string | undefined>();
+	const [tagNames, setTagNames] = useState<string[]>([]);
 
 	const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 	const [draftSearch, setDraftSearch] = useState("");
 	const [draftCategoryCode, setDraftCategoryCode] = useState<string | undefined>();
 	const [draftLocationCode, setDraftLocationCode] = useState<string | undefined>();
+	const [draftTagNames, setDraftTagNames] = useState<string[]>([]);
 
 	const [stockInDrawerOpen, setStockInDrawerOpen] = useState(false);
 	const [stockOutDrawerOpen, setStockOutDrawerOpen] = useState(false);
@@ -138,6 +140,10 @@ function InventoryPage({ baseOptions }: InventoryPageProps) {
 					query.set("locationCode", locationCode);
 				}
 
+				if (tagNames.length > 0) {
+					query.set("tagNames", tagNames.join(","));
+				}
+
 				const itemsResponse = await fetchJson<ApiResponse<InventoryItem[]>>(
 					`/api/items?${query.toString()}`
 				);
@@ -159,7 +165,7 @@ function InventoryPage({ baseOptions }: InventoryPageProps) {
 				setRefreshing(false);
 			}
 		},
-		[appliedSearch, categoryCode, locationCode, message]
+		[appliedSearch, categoryCode, locationCode, message, tagNames]
 	);
 
 	useEffect(() => {
@@ -271,6 +277,18 @@ function InventoryPage({ baseOptions }: InventoryPageProps) {
 			value: item.id,
 		}));
 	}, [items, stockActionItems]);
+	const tagFilterOptions = useMemo(() => {
+		const values = new Set<string>([...tagNames, ...draftTagNames]);
+		items.forEach((item) => {
+			item.tagNames.forEach((tagName) => values.add(tagName));
+		});
+		return Array.from(values)
+			.sort((left, right) => left.localeCompare(right, "zh-Hans-CN"))
+			.map((tagName) => ({
+				label: tagName,
+				value: tagName,
+			}));
+	}, [draftTagNames, items, tagNames]);
 
 	const selectedEditBatch = useMemo(
 		() => editableBatches.find((batch) => batch.id === selectedEditBatchId) ?? null,
@@ -285,8 +303,9 @@ function InventoryPage({ baseOptions }: InventoryPageProps) {
 		setDraftSearch(search);
 		setDraftCategoryCode(categoryCode);
 		setDraftLocationCode(locationCode);
+		setDraftTagNames(tagNames);
 		setFilterDrawerOpen(true);
-	}, [categoryCode, locationCode, search]);
+	}, [categoryCode, locationCode, search, tagNames]);
 
 	const applyFilters = useCallback(() => {
 		const nextSearch = draftSearch.trim();
@@ -294,17 +313,20 @@ function InventoryPage({ baseOptions }: InventoryPageProps) {
 		setAppliedSearch(nextSearch);
 		setCategoryCode(draftCategoryCode);
 		setLocationCode(draftLocationCode);
+		setTagNames(draftTagNames);
 		setFilterDrawerOpen(false);
-	}, [draftCategoryCode, draftLocationCode, draftSearch]);
+	}, [draftCategoryCode, draftLocationCode, draftSearch, draftTagNames]);
 
 	const clearFilters = useCallback(() => {
 		setSearch("");
 		setAppliedSearch("");
 		setCategoryCode(undefined);
 		setLocationCode(undefined);
+		setTagNames([]);
 		setDraftSearch("");
 		setDraftCategoryCode(undefined);
 		setDraftLocationCode(undefined);
+		setDraftTagNames([]);
 		setFilterDrawerOpen(false);
 	}, []);
 
@@ -740,6 +762,19 @@ function InventoryPage({ baseOptions }: InventoryPageProps) {
 								value: option.code,
 							}))}
 							onChange={(value) => setDraftLocationCode(value)}
+							className="full-width-input"
+						/>
+					</div>
+					<div>
+						<Text type="secondary">标签</Text>
+						<Select
+							mode="multiple"
+							allowClear
+							placeholder="全部标签"
+							value={draftTagNames}
+							options={tagFilterOptions}
+							onChange={(values) => setDraftTagNames(values)}
+							optionFilterProp="label"
 							className="full-width-input"
 						/>
 					</div>

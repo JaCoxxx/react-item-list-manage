@@ -24,6 +24,11 @@ export type BaseOption = {
 
 export type BaseOptionGroups = Record<string, BaseOption[]>;
 
+export type ItemTagSummary = {
+	tagName: string;
+	itemCount: number;
+};
+
 export type InventoryItem = {
 	id: string;
 	name: string;
@@ -41,6 +46,7 @@ export type InventoryItem = {
 	nearestExpiryDate: string | null;
 	expiredBatchCount: number;
 	expiringBatchCount: number;
+	tagNames: string[];
 };
 
 export type StockBatch = {
@@ -77,6 +83,7 @@ export type ItemFormValues = {
 	itemCode?: string;
 	categoryCode: string;
 	unitCode: string;
+	tagNames: string[];
 	defaultLocationCode?: string;
 	defaultShelfLifeDays?: number;
 	minStockAlert?: number;

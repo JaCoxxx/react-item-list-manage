@@ -40,6 +40,7 @@ type ItemRow = {
 	nearest_expiry_date?: string | null;
 	expired_batch_count?: number;
 	expiring_batch_count?: number;
+	tag_names?: string | null;
 };
 
 type BatchInventoryRow = {
@@ -83,6 +84,11 @@ type DashboardRow = {
 	items_below_min_stock: number;
 	items_expiring_soon: number;
 	items_with_expired_stock: number;
+};
+
+type TagSummaryRow = {
+	tag_name: string;
+	item_count: number;
 };
 
 type BaiduTokenCache = {
@@ -220,6 +226,9 @@ const apiIndexHandler = (c: Context<AppBindings>) =>
 				"/api/base-options",
 				"/api/base-options/:type",
 				"/api/base-options/:type/:id",
+				"/api/tags",
+				"/api/tags (POST)",
+				"/api/tags/:tagName",
 				"/api/items",
 				"/api/items/:id",
 				"/api/stock/in",
@@ -250,6 +259,8 @@ app.get("/api/setup/status", async (c) => {
 	const requiredTables = [
 		"base_options",
 		"items",
+		"item_tags",
+		"tags",
 		"stock_batches",
 		"stock_movements",
 	];
@@ -524,10 +535,172 @@ app.delete("/api/base-options/:type/:id", async (c) => {
 	});
 });
 
+app.get("/api/tags", async (c) => {
+	const search = normalizeQueryValue(c.req.query("search"));
+	const limit = parseLimit(c.req.query("limit"), 200);
+	const conditions = ["1 = 1"];
+	const bindings: unknown[] = [];
+
+	if (search) {
+		conditions.push("t.tag_name LIKE ?");
+		bindings.push(`%${search}%`);
+	}
+
+	bindings.push(limit);
+
+	const rows = await c.env.item_list_db
+		.prepare(
+			`SELECT
+				t.tag_name,
+				COUNT(DISTINCT it.item_id) AS item_count
+			FROM (
+				SELECT tag_name FROM tags
+				UNION
+				SELECT tag_name FROM item_tags
+			) t
+			LEFT JOIN item_tags it ON it.tag_name = t.tag_name
+			WHERE ${conditions.join(" AND ")}
+			GROUP BY t.tag_name
+			ORDER BY t.tag_name COLLATE NOCASE ASC
+			LIMIT ?`
+		)
+		.bind(...bindings)
+		.all<TagSummaryRow>();
+
+	return c.json({
+		data: rows.results.map((row) => ({
+			tagName: row.tag_name,
+			itemCount: row.item_count ?? 0,
+		})),
+	});
+});
+
+app.post("/api/tags", async (c) => {
+	const session = c.env.item_list_db.withSession("first-primary");
+	const payload = await readJson<Record<string, unknown>>(c);
+	const tagName = getRequiredString(payload, "tagName");
+
+	await session
+		.prepare(
+			`INSERT INTO tags (
+				id,
+				tag_name
+			) VALUES (?, ?)`
+		)
+		.bind(crypto.randomUUID(), tagName)
+		.run();
+
+	return c.json(
+		{
+			data: {
+				tagName,
+				created: true,
+			},
+		},
+		201
+	);
+});
+
+app.patch("/api/tags/:tagName", async (c) => {
+	const currentTagName = getRequiredTagNameFromRoute(c.req.param("tagName"), "tagName");
+	const payload = await readJson<Record<string, unknown>>(c);
+	const newTagName = getRequiredString(payload, "newTagName");
+	const session = c.env.item_list_db.withSession("first-primary");
+
+	const currentExists = await session
+		.prepare(
+			`SELECT
+				EXISTS(SELECT 1 FROM tags WHERE tag_name = ?) AS tag_exists,
+				EXISTS(SELECT 1 FROM item_tags WHERE tag_name = ?) AS item_tag_exists`
+		)
+		.bind(currentTagName, currentTagName)
+		.first<{ tag_exists: number; item_tag_exists: number }>();
+
+	if (!currentExists || (currentExists.tag_exists !== 1 && currentExists.item_tag_exists !== 1)) {
+		throw new ApiError(404, "Tag not found.");
+	}
+
+	if (newTagName === currentTagName) {
+		return c.json({
+			data: {
+				tagName: currentTagName,
+				updated: true,
+			},
+		});
+	}
+
+	await session.batch([
+		session
+			.prepare(
+				`INSERT OR IGNORE INTO tags (
+					id,
+					tag_name
+				) VALUES (?, ?)`
+			)
+			.bind(crypto.randomUUID(), newTagName),
+		session
+			.prepare(
+				`DELETE FROM item_tags
+				WHERE tag_name = ?
+					AND item_id IN (
+						SELECT item_id
+						FROM item_tags
+						WHERE tag_name = ?
+					)`
+			)
+			.bind(currentTagName, newTagName),
+		session
+			.prepare(
+				`UPDATE item_tags
+				SET tag_name = ?
+				WHERE tag_name = ?`
+			)
+			.bind(newTagName, currentTagName),
+		session.prepare("DELETE FROM tags WHERE tag_name = ?").bind(currentTagName),
+	]);
+
+	return c.json({
+		data: {
+			tagName: newTagName,
+			updated: true,
+		},
+	});
+});
+
+app.delete("/api/tags/:tagName", async (c) => {
+	const tagName = getRequiredTagNameFromRoute(c.req.param("tagName"), "tagName");
+	const session = c.env.item_list_db.withSession("first-primary");
+	const currentExists = await session
+		.prepare("SELECT COUNT(*) AS count FROM item_tags WHERE tag_name = ?")
+		.bind(tagName)
+		.first<{ count: number }>();
+	const catalogExists = await session
+		.prepare("SELECT COUNT(*) AS count FROM tags WHERE tag_name = ?")
+		.bind(tagName)
+		.first<{ count: number }>();
+
+	if ((currentExists?.count ?? 0) <= 0 && (catalogExists?.count ?? 0) <= 0) {
+		throw new ApiError(404, "Tag not found.");
+	}
+
+	await session.batch([
+		session.prepare("DELETE FROM item_tags WHERE tag_name = ?").bind(tagName),
+		session.prepare("DELETE FROM tags WHERE tag_name = ?").bind(tagName),
+	]);
+
+	return c.json({
+		data: {
+			tagName,
+			deleted: true,
+		},
+	});
+});
+
 app.get("/api/items", async (c) => {
 	const search = normalizeQueryValue(c.req.query("search"));
 	const categoryCode = normalizeQueryValue(c.req.query("categoryCode"));
 	const locationCode = normalizeQueryValue(c.req.query("locationCode"));
+	const tagNames = parseTagNamesQuery(c.req.query("tagNames"));
 	const isActive = parseOptionalBoolean(c.req.query("isActive"));
 	const limit = parseLimit(c.req.query("limit"), 50);
 
@@ -547,6 +720,18 @@ app.get("/api/items", async (c) => {
 	if (locationCode) {
 		conditions.push("i.default_location_code = ?");
 		bindings.push(locationCode);
+	}
+
+	if (tagNames.length > 0) {
+		conditions.push(
+			`EXISTS (
+				SELECT 1
+				FROM item_tags it_filter
+				WHERE it_filter.item_id = i.id
+					AND it_filter.tag_name IN (${tagNames.map(() => "?").join(", ")})
+			)`
+		);
+		bindings.push(...tagNames);
 	}
 
 	if (typeof isActive === "boolean") {
@@ -575,7 +760,16 @@ app.get("/api/items", async (c) => {
 			COALESCE(inv.current_quantity, 0) AS current_quantity,
 			inv.nearest_expiry_date,
 			COALESCE(inv.expired_batch_count, 0) AS expired_batch_count,
-			COALESCE(inv.expiring_batch_count, 0) AS expiring_batch_count
+			COALESCE(inv.expiring_batch_count, 0) AS expiring_batch_count,
+			(
+				SELECT GROUP_CONCAT(tag_name, '\n')
+				FROM (
+					SELECT tag_name
+					FROM item_tags
+					WHERE item_id = i.id
+					ORDER BY tag_name COLLATE NOCASE ASC
+				)
+			) AS tag_names
 		FROM items i
 		LEFT JOIN item_inventory_view inv ON inv.item_id = i.id
 		WHERE ${conditions.join(" AND ")}
@@ -594,7 +788,7 @@ app.get("/api/items", async (c) => {
 });
 
 app.post("/api/items", async (c) => {
-	const db = c.env.item_list_db;
+	const session = c.env.item_list_db.withSession("first-primary");
 	const payload = await readJson<Record<string, unknown>>(c);
 	const itemName = getRequiredString(payload, "itemName");
 	const itemCode = getOptionalString(payload, "itemCode");
@@ -604,17 +798,19 @@ app.post("/api/items", async (c) => {
 	const defaultShelfLifeDays = getOptionalInteger(payload, "defaultShelfLifeDays");
 	const minStockAlert = getOptionalNonNegativeNumber(payload, "minStockAlert") ?? 0;
 	const remark = getOptionalString(payload, "remark");
+	const tagNames = getOptionalStringArray(payload, "tagNames");
 
 	await Promise.all([
-		ensureOptionExists(db, "category", categoryCode),
-		ensureOptionExists(db, "unit", unitCode),
-		ensureOptionExists(db, "location", defaultLocationCode),
+		ensureOptionExists(session, "category", categoryCode),
+		ensureOptionExists(session, "unit", unitCode),
+		ensureOptionExists(session, "location", defaultLocationCode),
 	]);
 
 	const itemId = crypto.randomUUID();
 
-	await db
-		.prepare(
+	const statements = [
+		session
+			.prepare(
 			`INSERT INTO items (
 				id,
 				item_name,
@@ -626,19 +822,48 @@ app.post("/api/items", async (c) => {
 				min_stock_alert,
 				remark
 			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-		)
-		.bind(
-			itemId,
-			itemName,
-			itemCode,
-			categoryCode,
-			unitCode,
-			defaultLocationCode,
-			defaultShelfLifeDays,
-			minStockAlert,
-			remark
-		)
-		.run();
+			)
+			.bind(
+				itemId,
+				itemName,
+				itemCode,
+				categoryCode,
+				unitCode,
+				defaultLocationCode,
+				defaultShelfLifeDays,
+				minStockAlert,
+				remark
+			),
+	];
+
+	for (const tagName of tagNames) {
+		statements.push(
+			session
+				.prepare(
+					`INSERT OR IGNORE INTO tags (
+						id,
+						tag_name
+					) VALUES (?, ?)`
+				)
+				.bind(crypto.randomUUID(), tagName)
+		);
+	}
+
+	for (const tagName of tagNames) {
+		statements.push(
+			session
+				.prepare(
+					`INSERT INTO item_tags (
+						id,
+						item_id,
+						tag_name
+					) VALUES (?, ?, ?)`
+				)
+				.bind(crypto.randomUUID(), itemId, tagName)
+		);
+	}
+
+	await session.batch(statements);
 
 	return c.json(
 		{
@@ -672,7 +897,16 @@ app.get("/api/items/:id", async (c) => {
 				COALESCE(inv.current_quantity, 0) AS current_quantity,
 				inv.nearest_expiry_date,
 				COALESCE(inv.expired_batch_count, 0) AS expired_batch_count,
-				COALESCE(inv.expiring_batch_count, 0) AS expiring_batch_count
+				COALESCE(inv.expiring_batch_count, 0) AS expiring_batch_count,
+				(
+					SELECT GROUP_CONCAT(tag_name, '\n')
+					FROM (
+						SELECT tag_name
+						FROM item_tags
+						WHERE item_id = i.id
+						ORDER BY tag_name COLLATE NOCASE ASC
+					)
+				) AS tag_names
 			FROM items i
 			LEFT JOIN item_inventory_view inv ON inv.item_id = i.id
 			WHERE i.id = ?`
@@ -746,13 +980,17 @@ app.get("/api/items/:id", async (c) => {
 
 app.patch("/api/items/:id", async (c) => {
 	const itemId = c.req.param("id");
-	const db = c.env.item_list_db;
+	const session = c.env.item_list_db.withSession("first-primary");
 	const payload = await readJson<Record<string, unknown>>(c);
 
-	await ensureItemExists(db, itemId);
+	await ensureItemExists(session, itemId);
 
 	const assignments: string[] = [];
 	const bindings: unknown[] = [];
+	const shouldUpdateTagNames = Object.hasOwn(payload, "tagNames");
+	const nextTagNames = shouldUpdateTagNames
+		? getOptionalStringArray(payload, "tagNames")
+		: [];
 
 	if (Object.hasOwn(payload, "itemName")) {
 		assignments.push("item_name = ?");
@@ -766,21 +1004,21 @@ app.patch("/api/items/:id", async (c) => {
 
 	if (Object.hasOwn(payload, "categoryCode")) {
 		const categoryCode = getRequiredString(payload, "categoryCode");
-		await ensureOptionExists(db, "category", categoryCode);
+		await ensureOptionExists(session, "category", categoryCode);
 		assignments.push("category_code = ?");
 		bindings.push(categoryCode);
 	}
 
 	if (Object.hasOwn(payload, "unitCode")) {
 		const unitCode = getRequiredString(payload, "unitCode");
-		await ensureOptionExists(db, "unit", unitCode);
+		await ensureOptionExists(session, "unit", unitCode);
 		assignments.push("unit_code = ?");
 		bindings.push(unitCode);
 	}
 
 	if (Object.hasOwn(payload, "defaultLocationCode")) {
 		const defaultLocationCode = getOptionalString(payload, "defaultLocationCode");
-		await ensureOptionExists(db, "location", defaultLocationCode);
+		await ensureOptionExists(session, "location", defaultLocationCode);
 		assignments.push("default_location_code = ?");
 		bindings.push(defaultLocationCode);
 	}
@@ -805,17 +1043,48 @@ app.patch("/api/items/:id", async (c) => {
 		bindings.push(getRequiredBoolean(payload, "isActive") ? 1 : 0);
 	}
 
-	if (assignments.length === 0) {
+	if (assignments.length === 0 && !shouldUpdateTagNames) {
 		throw new ApiError(400, "No valid fields were provided for update.");
 	}
 
 	assignments.push("updated_at = CURRENT_TIMESTAMP");
 	bindings.push(itemId);
+	const statements = [
+		session
+			.prepare(`UPDATE items SET ${assignments.join(", ")} WHERE id = ?`)
+			.bind(...bindings),
+	];
 
-	await db
-		.prepare(`UPDATE items SET ${assignments.join(", ")} WHERE id = ?`)
-		.bind(...bindings)
-		.run();
+	if (shouldUpdateTagNames) {
+		for (const tagName of nextTagNames) {
+			statements.push(
+				session
+					.prepare(
+						`INSERT OR IGNORE INTO tags (
+							id,
+							tag_name
+						) VALUES (?, ?)`
+					)
+					.bind(crypto.randomUUID(), tagName)
+			);
+		}
+		statements.push(session.prepare("DELETE FROM item_tags WHERE item_id = ?").bind(itemId));
+		for (const tagName of nextTagNames) {
+			statements.push(
+				session
+					.prepare(
+						`INSERT INTO item_tags (
+							id,
+							item_id,
+							tag_name
+						) VALUES (?, ?, ?)`
+					)
+					.bind(crypto.randomUUID(), itemId, tagName)
+			);
+		}
+	}
+
+	await session.batch(statements);
 
 	return c.json({
 		data: {
@@ -851,7 +1120,10 @@ app.delete("/api/items/:id", async (c) => {
 		});
 	}
 
-	await db.prepare("DELETE FROM items WHERE id = ?").bind(itemId).run();
+	await db.batch([
+		db.prepare("DELETE FROM item_tags WHERE item_id = ?").bind(itemId),
+		db.prepare("DELETE FROM items WHERE id = ?").bind(itemId),
+	]);
 
 	return c.json({
 		data: {
@@ -1477,6 +1749,22 @@ function normalizeQueryValue(value: string | undefined) {
 	return trimmed.length === 0 ? undefined : trimmed;
 }
 
+function getRequiredTagNameFromRoute(value: string | undefined, fieldName: string) {
+	const normalized = normalizeQueryValue(value);
+	if (!normalized) {
+		throw new ApiError(400, `${fieldName} must be a non-empty string.`);
+	}
+	return normalized;
+}
+
+function parseTagNamesQuery(value: string | undefined) {
+	if (value === undefined) {
+		return [];
+	}
+
+	return normalizeTagNames(value.split(","));
+}
+
 async function readJson<T>(c: Context<AppBindings>) {
 	try {
 		return (await c.req.json()) as T;
@@ -1512,6 +1800,28 @@ function getOptionalString(
 
 	const trimmed = value.trim();
 	return trimmed.length === 0 ? null : trimmed;
+}
+
+function getOptionalStringArray(
+	payload: Record<string, unknown>,
+	fieldName: string
+) {
+	const value = payload[fieldName];
+	if (value === undefined || value === null) {
+		return [];
+	}
+
+	if (!Array.isArray(value)) {
+		throw new ApiError(400, `${fieldName} must be an array of strings.`);
+	}
+
+	for (const entry of value) {
+		if (typeof entry !== "string") {
+			throw new ApiError(400, `${fieldName} must be an array of strings.`);
+		}
+	}
+
+	return normalizeTagNames(value);
 }
 
 function getRequiredBoolean(
@@ -1589,6 +1899,24 @@ function addDays(dateString: string, days: number) {
 
 function roundQuantity(value: number) {
 	return Number.parseFloat(value.toFixed(3));
+}
+
+function normalizeTagNames(values: string[]) {
+	const normalized = values
+		.map((value) => value.trim())
+		.filter((value) => value.length > 0);
+
+	return Array.from(new Set(normalized)).sort((left, right) =>
+		left.localeCompare(right, "zh-Hans-CN")
+	);
+}
+
+function parseTagNames(value: string | null | undefined) {
+	if (!value) {
+		return [];
+	}
+
+	return normalizeTagNames(value.split("\n"));
 }
 
 function requireEnvValue(value: string | undefined, fieldName: string) {
@@ -2323,6 +2651,7 @@ function mapItemSummary(row: ItemRow) {
 		nearestExpiryDate: row.nearest_expiry_date ?? null,
 		expiredBatchCount: row.expired_batch_count ?? 0,
 		expiringBatchCount: row.expiring_batch_count ?? 0,
+		tagNames: parseTagNames(row.tag_names),
 	};
 }
 

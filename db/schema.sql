@@ -29,6 +29,22 @@ CREATE TABLE IF NOT EXISTS items (
 	UNIQUE (item_code)
 );
 
+CREATE TABLE IF NOT EXISTS item_tags (
+	id TEXT PRIMARY KEY,
+	item_id TEXT NOT NULL,
+	tag_name TEXT NOT NULL,
+	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
+	UNIQUE (item_id, tag_name)
+);
+
+CREATE TABLE IF NOT EXISTS tags (
+	id TEXT PRIMARY KEY,
+	tag_name TEXT NOT NULL UNIQUE,
+	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS stock_batches (
 	id TEXT PRIMARY KEY,
 	item_id TEXT NOT NULL,
@@ -68,6 +84,15 @@ CREATE INDEX IF NOT EXISTS idx_items_category
 
 CREATE INDEX IF NOT EXISTS idx_items_location
 	ON items (default_location_code);
+
+CREATE INDEX IF NOT EXISTS idx_item_tags_item
+	ON item_tags (item_id);
+
+CREATE INDEX IF NOT EXISTS idx_item_tags_tag
+	ON item_tags (tag_name);
+
+CREATE INDEX IF NOT EXISTS idx_tags_name
+	ON tags (tag_name);
 
 CREATE INDEX IF NOT EXISTS idx_stock_batches_item_expiry
 	ON stock_batches (item_id, expiry_date, purchased_at);

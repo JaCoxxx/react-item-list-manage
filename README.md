@@ -58,6 +58,24 @@ The `dev` command now initializes the local D1 schema and seed data only when th
 local database does not exist yet.
 Your application will be available at [http://localhost:5173](http://localhost:5173).
 
+To start local dev while using **remote D1 bindings** (online database), run:
+
+```bash
+npm run dev:remote-db
+```
+
+This command uses the `remote_db` Cloudflare environment and sets the D1 binding
+to `"remote": true` for development.
+
+If this command fails to start, make sure you are logged in and can reach Cloudflare:
+
+```bash
+npx wrangler login
+```
+
+Also make sure your network can access `*.workers.dev` over HTTPS, and use Node 20+
+for Wrangler-related commands.
+
 ## D1 setup
 
 This project now includes a household inventory backend schema in `db/schema.sql`

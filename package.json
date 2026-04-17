@@ -45,6 +45,7 @@
 		"d1:init:remote": "npm_config_loglevel=silent npx -y node@20 ./node_modules/wrangler/bin/wrangler.js d1 execute item-list-db --remote --file=./db/schema.sql && npm_config_loglevel=silent npx -y node@20 ./node_modules/wrangler/bin/wrangler.js d1 execute item-list-db --remote --file=./db/seed.sql",
 		"deploy": "wrangler deploy",
 		"dev": "node ./scripts/ensure-local-d1.cjs && node -r ./scripts/node-web-globals.cjs ./node_modules/vite/bin/vite.js",
+		"dev:remote-db": "CLOUDFLARE_ENV=remote_db CF_REMOTE_BINDINGS=1 npm_config_loglevel=silent npx -y node@20 -r ./scripts/node-web-globals.cjs ./node_modules/vite/bin/vite.js",
 		"lint": "eslint .",
 		"preview": "npm run build && node -r ./scripts/node-web-globals.cjs ./node_modules/vite/bin/vite.js preview"
 	},

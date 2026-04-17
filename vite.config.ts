@@ -14,9 +14,12 @@ export default defineConfig(async () => {
 		import("@vitejs/plugin-react"),
 		import("@cloudflare/vite-plugin"),
 	]);
+	const remoteBindingsEnabled =
+		process.env.CF_REMOTE_BINDINGS === "1" ||
+		process.env.CF_REMOTE_BINDINGS === "true";
 
 	return {
-		plugins: [react(), cloudflare()],
+		plugins: [react(), cloudflare({ remoteBindings: remoteBindingsEnabled })],
 		resolve: {
 			alias: {
 				react: path.resolve(configDir, "node_modules/react"),

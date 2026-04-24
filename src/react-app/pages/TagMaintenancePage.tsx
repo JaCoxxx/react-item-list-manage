@@ -16,12 +16,18 @@ import { PlusOutlined } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson, requestJson } from "../lib/api";
-import type { ApiResponse, ItemTagSummary } from "../lib/types";
+import type {
+	ApiResponse,
+	ItemTagSummary,
+	PageLayoutMode,
+} from "../lib/types";
+import { getListColumnCount } from "../lib/utils";
 
 const { Text } = Typography;
 
 type TagMaintenancePageProps = {
 	reloadCoreData: (showToast?: boolean) => Promise<void>;
+	pageLayoutMode: PageLayoutMode;
 };
 
 type RenameTagFormValues = {
@@ -32,10 +38,14 @@ type CreateTagFormValues = {
 	tagName: string;
 };
 
-function TagMaintenancePage({ reloadCoreData }: TagMaintenancePageProps) {
+function TagMaintenancePage({
+	reloadCoreData,
+	pageLayoutMode,
+}: TagMaintenancePageProps) {
 	const { message } = AntdApp.useApp();
 	const screens = Grid.useBreakpoint();
 	const isMobile = !screens.md;
+	const listColumnCount = getListColumnCount(pageLayoutMode);
 	const [renameForm] = Form.useForm<RenameTagFormValues>();
 	const [createForm] = Form.useForm<CreateTagFormValues>();
 	const [tags, setTags] = useState<ItemTagSummary[]>([]);
@@ -281,31 +291,68 @@ function TagMaintenancePage({ reloadCoreData }: TagMaintenancePageProps) {
 			</div>
 
 			<Card className="surface-card">
-				{isMobile ? (
+				{pageLayoutMode === "row" ? (
+					isMobile ? (
+						<List
+							className="base-option-mobile-list"
+							loading={loading}
+							dataSource={tags}
+							locale={{ emptyText: "暂无标签" }}
+							renderItem={(tag) => (
+								<List.Item className="base-option-mobile-item">
+									<div className="base-option-mobile-main">
+										<Text strong>{tag.tagName}</Text>
+										<Text type="secondary">关联物品：{tag.itemCount}</Text>
+									</div>
+									<div className="base-option-mobile-actions">{rowActions(tag)}</div>
+								</List.Item>
+							)}
+						/>
+					) : (
+						<Table<ItemTagSummary>
+							rowKey="tagName"
+							loading={loading}
+							columns={columns}
+							dataSource={tags}
+							pagination={{ pageSize: 12, showSizeChanger: false }}
+							scroll={{ x: 800 }}
+							className="item-list-table"
+						/>
+					)
+				) : (
 					<List
-						className="base-option-mobile-list"
+						className="layout-card-list"
 						loading={loading}
 						dataSource={tags}
 						locale={{ emptyText: "暂无标签" }}
+						grid={{
+							gutter: 12,
+							column: listColumnCount,
+							xs: listColumnCount,
+							sm: listColumnCount,
+							md: listColumnCount,
+							lg: listColumnCount,
+							xl: listColumnCount,
+							xxl: listColumnCount,
+						}}
 						renderItem={(tag) => (
-							<List.Item className="base-option-mobile-item">
-								<div className="base-option-mobile-main">
-									<Text strong>{tag.tagName}</Text>
-									<Text type="secondary">关联物品：{tag.itemCount}</Text>
-								</div>
-								<div className="base-option-mobile-actions">{rowActions(tag)}</div>
+							<List.Item>
+								<Card className="surface-card layout-list-card">
+									<Space direction="vertical" size={10} className="layout-list-card-stack">
+										<div>
+											<Text strong>{tag.tagName}</Text>
+										</div>
+										<div>
+											<Text type="secondary">关联物品数</Text>
+											<div>
+												<Text>{tag.itemCount}</Text>
+											</div>
+										</div>
+										<div className="layout-list-card-actions">{rowActions(tag)}</div>
+									</Space>
+								</Card>
 							</List.Item>
 						)}
-					/>
-				) : (
-					<Table<ItemTagSummary>
-						rowKey="tagName"
-						loading={loading}
-						columns={columns}
-						dataSource={tags}
-						pagination={{ pageSize: 12, showSizeChanger: false }}
-						scroll={{ x: 800 }}
-						className="item-list-table"
 					/>
 				)}
 			</Card>

@@ -673,6 +673,39 @@
 	margin-left: auto;
 }
 
+.layout-card-list {
+	width: 100%;
+}
+
+.layout-card-list .ant-list-item {
+	padding: 0 !important;
+}
+
+.layout-list-card {
+	width: 100%;
+}
+
+.layout-list-card-clickable {
+	cursor: pointer;
+}
+
+.layout-list-card-clickable:hover {
+	border-color: #91caff !important;
+}
+
+.layout-list-card-stack {
+	width: 100%;
+}
+
+.layout-list-card-actions {
+	width: 100%;
+}
+
+.quick-stock-card-actions {
+	display: flex;
+	justify-content: flex-end;
+}
+
 .item-detail-drawer .ant-descriptions-item-label {
 	width: 120px;
 }
@@ -1150,6 +1183,14 @@
 	.quick-stock-create {
 		flex-direction: column;
 		align-items: stretch;
+	}
+
+	.quick-stock-card-actions {
+		justify-content: stretch;
+	}
+
+	.quick-stock-card-actions .ant-btn {
+		flex: 1 1 0;
 	}
 
 	.quick-stock-create-button {

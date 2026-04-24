@@ -3,7 +3,9 @@ import {
 	CameraOutlined,
 	DatabaseOutlined,
 	InboxOutlined,
+	MessageOutlined,
 	MenuOutlined,
+	RobotOutlined,
 	RocketOutlined,
 	TagsOutlined,
 	ToolOutlined,
@@ -23,10 +25,18 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import { fetchJson } from "./lib/api";
-import type { ApiResponse, BaseOptionGroups, InventoryItem } from "./lib/types";
+import type {
+	AiProvider,
+	ApiResponse,
+	BaseOptionGroups,
+	InventoryItem,
+	PageLayoutMode,
+} from "./lib/types";
 import BaseOptionsPage from "./pages/BaseOptionsPage";
 import InventoryPage from "./pages/InventoryPage";
 import ItemMaintenancePage from "./pages/ItemMaintenancePage";
+import AiReceiptPage from "./pages/AiReceiptPage";
+import AiOpsChatPage from "./pages/AiOpsChatPage";
 import OcrUploadPage from "./pages/OcrUploadPage";
 import OverviewPage from "./pages/OverviewPage";
 import QuickStockPage from "./pages/QuickStockPage";
@@ -36,7 +46,19 @@ import ToolsPage from "./pages/ToolsPage";
 const { Header, Content } = Layout;
 const { Title } = Typography;
 const { useBreakpoint } = Grid;
-const APP_PATHS = ["/overview", "/inventory", "/quick-stock", "/items", "/tags", "/base-options", "/ocr-upload", "/tools"] as const;
+const APP_PATHS = ["/overview", "/inventory", "/quick-stock", "/items", "/tags", "/base-options", "/ocr-upload", "/ai-receipt", "/ai-chat-ops", "/tools"] as const;
+const PAGE_LAYOUT_STORAGE_KEY = "item-list-page-layout-mode";
+const DEFAULT_PAGE_LAYOUT_MODE: PageLayoutMode = "row";
+const AI_PROVIDER_STORAGE_KEY = "item-list-ai-provider";
+const DEFAULT_AI_PROVIDER: AiProvider = "gpt";
+
+function parsePageLayoutMode(value: string | null): PageLayoutMode {
+	if (value === "two-column" || value === "three-column" || value === "row") {
+		return value;
+	}
+
+	return DEFAULT_PAGE_LAYOUT_MODE;
+}
 
 function getCurrentPath() {
 	if (typeof window === "undefined") {
@@ -46,6 +68,30 @@ function getCurrentPath() {
 	return window.location.pathname === "/stock-in"
 		? "/inventory"
 		: window.location.pathname;
+}
+
+function getInitialPageLayoutMode() {
+	if (typeof window === "undefined") {
+		return DEFAULT_PAGE_LAYOUT_MODE;
+	}
+
+	return parsePageLayoutMode(window.localStorage.getItem(PAGE_LAYOUT_STORAGE_KEY));
+}
+
+function parseAiProvider(value: string | null): AiProvider {
+	if (value === "deepseek" || value === "gpt") {
+		return value;
+	}
+
+	return DEFAULT_AI_PROVIDER;
+}
+
+function getInitialAiProvider() {
+	if (typeof window === "undefined") {
+		return DEFAULT_AI_PROVIDER;
+	}
+
+	return parseAiProvider(window.localStorage.getItem(AI_PROVIDER_STORAGE_KEY));
 }
 
 function App() {
@@ -58,6 +104,10 @@ function App() {
 	const [allItems, setAllItems] = useState<InventoryItem[]>([]);
 	const [currentPath, setCurrentPath] = useState(getCurrentPath);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const [pageLayoutMode, setPageLayoutMode] = useState<PageLayoutMode>(
+		getInitialPageLayoutMode
+	);
+	const [aiProvider, setAiProvider] = useState<AiProvider>(getInitialAiProvider);
 
 	const reloadCoreData = useCallback(
 		async (showToast = false) => {
@@ -146,6 +196,16 @@ function App() {
 				icon: <CameraOutlined />,
 			},
 			{
+				key: "/ai-receipt",
+				label: "AI小票",
+				icon: <RobotOutlined />,
+			},
+			{
+				key: "/ai-chat-ops",
+				label: "对话操作",
+				icon: <MessageOutlined />,
+			},
+			{
 				key: "/tools",
 				label: "工具页",
 				icon: <ToolOutlined />,
@@ -166,6 +226,12 @@ function App() {
 		window.history.replaceState({}, "", resolvedPath);
 		setCurrentPath(resolvedPath);
 	}, [currentPath, resolvedPath]);
+	useEffect(() => {
+		window.localStorage.setItem(PAGE_LAYOUT_STORAGE_KEY, pageLayoutMode);
+	}, [pageLayoutMode]);
+	useEffect(() => {
+		window.localStorage.setItem(AI_PROVIDER_STORAGE_KEY, aiProvider);
+	}, [aiProvider]);
 
 	const navigateTo = useCallback((nextPath: (typeof APP_PATHS)[number]) => {
 		if (nextPath === currentPath) {
@@ -184,6 +250,12 @@ function App() {
 
 		navigateTo(menuKey as (typeof APP_PATHS)[number]);
 	}, [navigateTo]);
+	const handlePageLayoutModeChange = useCallback((nextMode: PageLayoutMode) => {
+		setPageLayoutMode(nextMode);
+	}, []);
+	const handleAiProviderChange = useCallback((nextProvider: AiProvider) => {
+		setAiProvider(nextProvider);
+	}, []);
 
 	const currentPage = useMemo(() => {
 		switch (resolvedPath) {
@@ -191,6 +263,7 @@ function App() {
 				return (
 					<InventoryPage
 						baseOptions={baseOptions}
+						pageLayoutMode={pageLayoutMode}
 					/>
 				);
 			case "/items":
@@ -198,6 +271,7 @@ function App() {
 					<ItemMaintenancePage
 						baseOptions={baseOptions}
 						reloadCoreData={reloadCoreData}
+						pageLayoutMode={pageLayoutMode}
 					/>
 				);
 			case "/quick-stock":
@@ -205,6 +279,7 @@ function App() {
 					<QuickStockPage
 						baseOptions={baseOptions}
 						reloadCoreData={reloadCoreData}
+						pageLayoutMode={pageLayoutMode}
 					/>
 				);
 			case "/base-options":
@@ -212,10 +287,16 @@ function App() {
 					<BaseOptionsPage
 						baseOptions={baseOptions}
 						reloadCoreData={reloadCoreData}
+						pageLayoutMode={pageLayoutMode}
 					/>
 				);
 			case "/tags":
-				return <TagMaintenancePage reloadCoreData={reloadCoreData} />;
+				return (
+					<TagMaintenancePage
+						reloadCoreData={reloadCoreData}
+						pageLayoutMode={pageLayoutMode}
+					/>
+				);
 			case "/tools":
 				return (
 					<ToolsPage
@@ -223,10 +304,18 @@ function App() {
 						allItems={allItems}
 						refreshing={refreshing}
 						reloadCoreData={reloadCoreData}
+						pageLayoutMode={pageLayoutMode}
+						onPageLayoutModeChange={handlePageLayoutModeChange}
+						aiProvider={aiProvider}
+						onAiProviderChange={handleAiProviderChange}
 					/>
 				);
 			case "/ocr-upload":
 				return <OcrUploadPage />;
+			case "/ai-receipt":
+				return <AiReceiptPage aiProvider={aiProvider} />;
+			case "/ai-chat-ops":
+				return <AiOpsChatPage aiProvider={aiProvider} />;
 			case "/overview":
 			default:
 				return (
@@ -237,7 +326,18 @@ function App() {
 					/>
 				);
 		}
-	}, [allItems, baseOptions, navigateTo, refreshing, reloadCoreData, resolvedPath]);
+	}, [
+		allItems,
+		aiProvider,
+		baseOptions,
+		handleAiProviderChange,
+		handlePageLayoutModeChange,
+		navigateTo,
+		pageLayoutMode,
+		refreshing,
+		reloadCoreData,
+		resolvedPath,
+	]);
 
 	return (
 		<Layout className="app-layout">

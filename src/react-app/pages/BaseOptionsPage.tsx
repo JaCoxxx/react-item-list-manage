@@ -21,8 +21,17 @@ import {
 import type { TableColumnsType } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson, requestJson } from "../lib/api";
-import type { ApiResponse, BaseOption, BaseOptionGroups } from "../lib/types";
-import { displayTypeName, normalizeOptionalText } from "../lib/utils";
+import type {
+	ApiResponse,
+	BaseOption,
+	BaseOptionGroups,
+	PageLayoutMode,
+} from "../lib/types";
+import {
+	displayTypeName,
+	getListColumnCount,
+	normalizeOptionalText,
+} from "../lib/utils";
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
@@ -30,6 +39,7 @@ const { useBreakpoint } = Grid;
 type BaseOptionsPageProps = {
 	baseOptions: BaseOptionGroups;
 	reloadCoreData: (showToast?: boolean) => Promise<void>;
+	pageLayoutMode: PageLayoutMode;
 };
 
 type BaseOptionFormValues = {
@@ -59,7 +69,11 @@ const DEFAULT_FORM_VALUES: BaseOptionFormValues = {
 	isActive: true,
 };
 
-function BaseOptionsPage({ baseOptions, reloadCoreData }: BaseOptionsPageProps) {
+function BaseOptionsPage({
+	baseOptions,
+	reloadCoreData,
+	pageLayoutMode,
+}: BaseOptionsPageProps) {
 	const { message } = AntdApp.useApp();
 	const screens = useBreakpoint();
 	const isMobile = !screens.md;
@@ -75,6 +89,7 @@ function BaseOptionsPage({ baseOptions, reloadCoreData }: BaseOptionsPageProps) 
 	const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [actionKey, setActionKey] = useState<string | null>(null);
+	const listColumnCount = getListColumnCount(pageLayoutMode);
 
 	const typeOptions = useMemo(() => {
 		const allTypes = new Set<string>(KNOWN_BASE_OPTION_TYPES);
@@ -521,82 +536,180 @@ function BaseOptionsPage({ baseOptions, reloadCoreData }: BaseOptionsPageProps) 
 						/>
 					</Space>
 
-					{isMobile ? (
+					{pageLayoutMode === "row" ? (
+						isMobile ? (
+							<List
+								className="base-option-mobile-list"
+								loading={loading}
+								dataSource={filteredOptions}
+								locale={{ emptyText: "该类型下暂无基础数据" }}
+								renderItem={(option) => (
+									<List.Item
+										className="base-option-mobile-item"
+										onClick={() => openDetailDrawer(option)}
+									>
+										<div className="base-option-mobile-main">
+											<Text strong>{option.name}</Text>
+											<Text type="secondary">{option.code}</Text>
+										</div>
+										<Space size={8}>
+											{option.isActive ? (
+												<Tag className="mono-tag">启用</Tag>
+											) : (
+												<Tag className="status-tag">停用</Tag>
+											)}
+										</Space>
+										<div className="base-option-mobile-actions">{rowActions(option)}</div>
+									</List.Item>
+								)}
+							/>
+						) : (
+							<Table<BaseOption>
+								rowKey="id"
+								loading={loading}
+								columns={optionColumns}
+								dataSource={filteredOptions}
+								pagination={{ pageSize: 12, showSizeChanger: false }}
+								scroll={{ x: 980 }}
+								onRow={(option) => ({
+									onClick: () => openDetailDrawer(option),
+								})}
+								rowClassName={() => "item-list-row"}
+								className="item-list-table"
+							/>
+						)
+					) : (
 						<List
-							className="base-option-mobile-list"
+							className="layout-card-list"
 							loading={loading}
 							dataSource={filteredOptions}
 							locale={{ emptyText: "该类型下暂无基础数据" }}
+							grid={{
+								gutter: 12,
+								column: listColumnCount,
+								xs: listColumnCount,
+								sm: listColumnCount,
+								md: listColumnCount,
+								lg: listColumnCount,
+								xl: listColumnCount,
+								xxl: listColumnCount,
+							}}
 							renderItem={(option) => (
-								<List.Item
-									className="base-option-mobile-item"
-									onClick={() => openDetailDrawer(option)}
-								>
-									<div className="base-option-mobile-main">
-										<Text strong>{option.name}</Text>
-										<Text type="secondary">{option.code}</Text>
-									</div>
-									<Space size={8}>
-										{option.isActive ? (
-											<Tag className="mono-tag">启用</Tag>
-										) : (
-											<Tag className="status-tag">停用</Tag>
-										)}
-									</Space>
-									<div className="base-option-mobile-actions">{rowActions(option)}</div>
+								<List.Item>
+									<Card
+										className="surface-card layout-list-card layout-list-card-clickable"
+										onClick={() => openDetailDrawer(option)}
+									>
+										<Space direction="vertical" size={10} className="layout-list-card-stack">
+											<div>
+												<Text strong>{option.name}</Text>
+												<div>
+													<Text type="secondary">{option.code}</Text>
+												</div>
+											</div>
+											<div>
+												<Text type="secondary">排序</Text>
+												<div>
+													<Text>{option.sortOrder}</Text>
+												</div>
+											</div>
+											<div>
+												{option.isActive ? (
+													<Tag className="mono-tag">启用</Tag>
+												) : (
+													<Tag className="status-tag">停用</Tag>
+												)}
+											</div>
+											<div className="layout-list-card-actions">{rowActions(option)}</div>
+										</Space>
+									</Card>
 								</List.Item>
 							)}
-						/>
-					) : (
-						<Table<BaseOption>
-							rowKey="id"
-							loading={loading}
-							columns={optionColumns}
-							dataSource={filteredOptions}
-							pagination={{ pageSize: 12, showSizeChanger: false }}
-							scroll={{ x: 980 }}
-							onRow={(option) => ({
-								onClick: () => openDetailDrawer(option),
-							})}
-							rowClassName={() => "item-list-row"}
-							className="item-list-table"
 						/>
 					)}
 				</Card>
 			) : (
 				<Card className="surface-card">
-					{isMobile ? (
+					{pageLayoutMode === "row" ? (
+						isMobile ? (
+							<List
+								className="base-option-type-list"
+								loading={loading}
+								dataSource={typeSummaryList}
+								renderItem={(entry) => (
+									<List.Item
+										className="base-option-type-item"
+										onClick={() => setSelectedType(entry.type)}
+									>
+										<div className="base-option-type-main">
+											<Text strong>{displayTypeName(entry.type)}</Text>
+											<Text type="secondary">
+												共 {entry.total} 项，启用 {entry.active}，停用 {entry.inactive}
+											</Text>
+										</div>
+										<Button size="small">进入</Button>
+									</List.Item>
+								)}
+							/>
+						) : (
+							<Table<OptionTypeSummary>
+								rowKey="type"
+								loading={loading}
+								columns={typeColumns}
+								dataSource={typeSummaryList}
+								pagination={false}
+								onRow={(entry) => ({
+									onClick: () => setSelectedType(entry.type),
+								})}
+								rowClassName={() => "item-list-row"}
+								className="item-list-table"
+							/>
+						)
+					) : (
 						<List
-							className="base-option-type-list"
+							className="layout-card-list"
 							loading={loading}
 							dataSource={typeSummaryList}
+							grid={{
+								gutter: 12,
+								column: listColumnCount,
+								xs: listColumnCount,
+								sm: listColumnCount,
+								md: listColumnCount,
+								lg: listColumnCount,
+								xl: listColumnCount,
+								xxl: listColumnCount,
+							}}
 							renderItem={(entry) => (
-								<List.Item
-									className="base-option-type-item"
-									onClick={() => setSelectedType(entry.type)}
-								>
-									<div className="base-option-type-main">
-										<Text strong>{displayTypeName(entry.type)}</Text>
-										<Text type="secondary">
-											共 {entry.total} 项，启用 {entry.active}，停用 {entry.inactive}
-										</Text>
-									</div>
-									<Button size="small">进入</Button>
+								<List.Item>
+									<Card className="surface-card layout-list-card">
+										<Space direction="vertical" size={10} className="layout-list-card-stack">
+											<div>
+												<Text strong>{displayTypeName(entry.type)}</Text>
+											</div>
+											<div>
+												<Text type="secondary">编码值数量</Text>
+												<div>
+													<Text>{entry.total}</Text>
+												</div>
+											</div>
+											<div>
+												<Text type="secondary">启用/停用</Text>
+												<div>
+													<Text>
+														{entry.active}/{entry.inactive}
+													</Text>
+												</div>
+											</div>
+											<div className="layout-list-card-actions">
+												<Button size="small" onClick={() => setSelectedType(entry.type)}>
+													进入列表
+												</Button>
+											</div>
+										</Space>
+									</Card>
 								</List.Item>
 							)}
-						/>
-					) : (
-						<Table<OptionTypeSummary>
-							rowKey="type"
-							loading={loading}
-							columns={typeColumns}
-							dataSource={typeSummaryList}
-							pagination={false}
-							onRow={(entry) => ({
-								onClick: () => setSelectedType(entry.type),
-							})}
-							rowClassName={() => "item-list-row"}
-							className="item-list-table"
 						/>
 					)}
 				</Card>

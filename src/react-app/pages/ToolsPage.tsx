@@ -1,6 +1,11 @@
 import { ReloadOutlined } from "@ant-design/icons";
-import { Button, Card, Col, Row, Space, Statistic, Typography } from "antd";
-import type { BaseOptionGroups, InventoryItem } from "../lib/types";
+import { Button, Card, Col, Radio, Row, Space, Statistic, Typography } from "antd";
+import type {
+	AiProvider,
+	BaseOptionGroups,
+	InventoryItem,
+	PageLayoutMode,
+} from "../lib/types";
 
 const { Text } = Typography;
 
@@ -9,6 +14,10 @@ type ToolsPageProps = {
 	allItems: InventoryItem[];
 	refreshing: boolean;
 	reloadCoreData: (showToast?: boolean) => Promise<void>;
+	pageLayoutMode: PageLayoutMode;
+	onPageLayoutModeChange: (mode: PageLayoutMode) => void;
+	aiProvider: AiProvider;
+	onAiProviderChange: (provider: AiProvider) => void;
 };
 
 function ToolsPage({
@@ -16,6 +25,10 @@ function ToolsPage({
 	allItems,
 	refreshing,
 	reloadCoreData,
+	pageLayoutMode,
+	onPageLayoutModeChange,
+	aiProvider,
+	onAiProviderChange,
 }: ToolsPageProps) {
 	const baseOptionCount = Object.values(baseOptions).reduce(
 		(total, options) => total + options.length,
@@ -42,6 +55,43 @@ function ToolsPage({
 				<Text>
 					刷新会重新拉取基础数据和物品列表，适合在新增、编辑后手动同步全局数据。
 				</Text>
+			</Card>
+
+			<Card title="页面布局" className="surface-card">
+				<Space direction="vertical" size={12}>
+					<Radio.Group
+						optionType="button"
+						buttonStyle="solid"
+						value={pageLayoutMode}
+						options={[
+							{ label: "行排列", value: "row" },
+							{ label: "双列排列", value: "two-column" },
+							{ label: "三列排列", value: "three-column" },
+						]}
+						onChange={(event) =>
+							onPageLayoutModeChange(event.target.value as PageLayoutMode)
+						}
+					/>
+					<Text type="secondary">设置会同步到各页面的列表区域，并保存在当前浏览器。</Text>
+				</Space>
+			</Card>
+
+			<Card title="AI 提供商" className="surface-card">
+				<Space direction="vertical" size={12}>
+					<Radio.Group
+						optionType="button"
+						buttonStyle="solid"
+						value={aiProvider}
+						options={[
+							{ label: "GPT", value: "gpt" },
+							{ label: "DeepSeek", value: "deepseek" },
+						]}
+						onChange={(event) =>
+							onAiProviderChange(event.target.value as AiProvider)
+						}
+					/>
+					<Text type="secondary">AI 小票与对话操作会使用当前选择的提供商。</Text>
+				</Space>
 			</Card>
 
 			<Card title="当前数据概况" className="surface-card">

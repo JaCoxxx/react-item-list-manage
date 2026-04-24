@@ -31,12 +31,14 @@ import {
 	EMPTY_OPTIONS,
 	findOptionName,
 	getDefaultStockInValues,
+	getListColumnCount,
 	normalizeOptionalText,
 } from "../lib/utils";
 import type {
 	ApiResponse,
 	BaseOptionGroups,
 	InventoryItem,
+	PageLayoutMode,
 	StockBatch,
 	StockInFormValues,
 } from "../lib/types";
@@ -74,9 +76,10 @@ type ItemDetailResponse = {
 
 type InventoryPageProps = {
 	baseOptions: BaseOptionGroups;
+	pageLayoutMode: PageLayoutMode;
 };
 
-function InventoryPage({ baseOptions }: InventoryPageProps) {
+function InventoryPage({ baseOptions, pageLayoutMode }: InventoryPageProps) {
 	const { message } = AntdApp.useApp();
 	const screens = useBreakpoint();
 	const isMobile = !screens.md;
@@ -118,6 +121,7 @@ function InventoryPage({ baseOptions }: InventoryPageProps) {
 	const locationOptions = baseOptions.location ?? EMPTY_OPTIONS;
 	const outboundReasonOptions = baseOptions.outbound_reason ?? EMPTY_OPTIONS;
 	const unitOptions = baseOptions.unit ?? EMPTY_OPTIONS;
+	const listColumnCount = getListColumnCount(pageLayoutMode);
 
 	const loadData = useCallback(
 		async (showToast: boolean) => {
@@ -590,43 +594,92 @@ function InventoryPage({ baseOptions }: InventoryPageProps) {
 					</Space>
 				}
 			>
-				{isMobile ? (
+				{pageLayoutMode === "row" ? (
+					isMobile ? (
+						<List
+							loading={loading}
+							dataSource={items}
+							className="inventory-compact-list"
+							locale={{ emptyText: "暂无物品" }}
+							renderItem={(item) => (
+								<List.Item
+									className="inventory-compact-row"
+									onClick={() => openInventoryDetailDrawer(item)}
+								>
+									<div className="inventory-compact-main">
+										<Text strong>{item.name}</Text>
+										<Text type="secondary">{item.code ?? "未设置编码"}</Text>
+									</div>
+									<Space size={8} className="inventory-compact-side">
+										<Text>
+											{item.currentQuantity}{" "}
+											{findOptionName(unitOptions, item.unitCode)}
+										</Text>
+										{renderExpiryStatus(item)}
+									</Space>
+								</List.Item>
+							)}
+						/>
+					) : (
+						<Table<InventoryItem>
+							rowKey="id"
+							loading={loading}
+							columns={itemColumns}
+							dataSource={items}
+							pagination={{ pageSize: 10, showSizeChanger: false }}
+							scroll={{ x: 900 }}
+							rowClassName={() => "item-list-row"}
+							onRow={(item) => ({
+								onClick: () => openInventoryDetailDrawer(item),
+							})}
+						/>
+					)
+				) : (
 					<List
 						loading={loading}
 						dataSource={items}
-						className="inventory-compact-list"
 						locale={{ emptyText: "暂无物品" }}
+						grid={{
+							gutter: 12,
+							column: listColumnCount,
+							xs: listColumnCount,
+							sm: listColumnCount,
+							md: listColumnCount,
+							lg: listColumnCount,
+							xl: listColumnCount,
+							xxl: listColumnCount,
+						}}
+						className="layout-card-list"
 						renderItem={(item) => (
-							<List.Item
-								className="inventory-compact-row"
-								onClick={() => openInventoryDetailDrawer(item)}
-							>
-								<div className="inventory-compact-main">
-									<Text strong>{item.name}</Text>
-									<Text type="secondary">{item.code ?? "未设置编码"}</Text>
-								</div>
-								<Space size={8} className="inventory-compact-side">
-									<Text>
-										{item.currentQuantity}{" "}
-										{findOptionName(unitOptions, item.unitCode)}
-									</Text>
-									{renderExpiryStatus(item)}
-								</Space>
+							<List.Item>
+								<Card
+									className="surface-card layout-list-card layout-list-card-clickable"
+									onClick={() => openInventoryDetailDrawer(item)}
+								>
+									<Space direction="vertical" size={10} className="layout-list-card-stack">
+										<div>
+											<Text strong>{item.name}</Text>
+											<div>
+												<Text type="secondary">{item.code ?? "未设置编码"}</Text>
+											</div>
+										</div>
+										<div>
+											<Text type="secondary">当前库存</Text>
+											<div>
+												<Text>
+													{item.currentQuantity}{" "}
+													{findOptionName(unitOptions, item.unitCode)}
+												</Text>
+											</div>
+										</div>
+										<div>
+											<Text type="secondary">到期状态</Text>
+											<div>{renderExpiryStatus(item)}</div>
+										</div>
+									</Space>
+								</Card>
 							</List.Item>
 						)}
-					/>
-				) : (
-					<Table<InventoryItem>
-						rowKey="id"
-						loading={loading}
-						columns={itemColumns}
-						dataSource={items}
-						pagination={{ pageSize: 10, showSizeChanger: false }}
-						scroll={{ x: 900 }}
-						rowClassName={() => "item-list-row"}
-						onRow={(item) => ({
-							onClick: () => openInventoryDetailDrawer(item),
-						})}
 					/>
 				)}
 			</Card>

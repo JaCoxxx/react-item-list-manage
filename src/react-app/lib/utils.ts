@@ -3,6 +3,7 @@ import type {
 	BaseOption,
 	InventoryItem,
 	ItemFormValues,
+	PageLayoutMode,
 	StockInFormValues,
 } from "./types";
 
@@ -74,4 +75,16 @@ export function mapItemToFormValues(item: InventoryItem): ItemFormValues {
 		remark: item.remark ?? undefined,
 		isActive: item.isActive,
 	};
+}
+
+export function getListColumnCount(layoutMode: PageLayoutMode) {
+	if (layoutMode === "two-column") {
+		return 2;
+	}
+
+	if (layoutMode === "three-column") {
+		return 3;
+	}
+
+	return 1;
 }

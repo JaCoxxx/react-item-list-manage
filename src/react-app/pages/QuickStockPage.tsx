@@ -1,22 +1,42 @@
-import { MinusOutlined, PlusOutlined, ReloadOutlined } from "@ant-design/icons";
-import { Alert, App as AntdApp, Button, Card, Input, List, Select, Space, Typography } from "antd";
+import { ReloadOutlined } from "@ant-design/icons";
+import {
+	Alert,
+	App as AntdApp,
+	Button,
+	Card,
+	Input,
+	List,
+	Select,
+	Space,
+	Typography,
+} from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson, requestJson } from "../lib/api";
-import type { ApiResponse, BaseOptionGroups, InventoryItem } from "../lib/types";
-import { EMPTY_OPTIONS } from "../lib/utils";
+import type {
+	ApiResponse,
+	BaseOptionGroups,
+	InventoryItem,
+	PageLayoutMode,
+} from "../lib/types";
+import { EMPTY_OPTIONS, getListColumnCount } from "../lib/utils";
 
 const { Text } = Typography;
 
 type QuickStockPageProps = {
 	baseOptions: BaseOptionGroups;
 	reloadCoreData: (showToast?: boolean) => Promise<void>;
+	pageLayoutMode: PageLayoutMode;
 };
 
 function todayDate() {
 	return new Date().toISOString().slice(0, 10);
 }
 
-function QuickStockPage({ baseOptions, reloadCoreData }: QuickStockPageProps) {
+function QuickStockPage({
+	baseOptions,
+	reloadCoreData,
+	pageLayoutMode,
+}: QuickStockPageProps) {
 	const { message } = AntdApp.useApp();
 	const [items, setItems] = useState<InventoryItem[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -24,6 +44,7 @@ function QuickStockPage({ baseOptions, reloadCoreData }: QuickStockPageProps) {
 	const [newItemName, setNewItemName] = useState("");
 	const [creating, setCreating] = useState(false);
 	const [selectedTagNames, setSelectedTagNames] = useState<string[]>([]);
+	const listColumnCount = getListColumnCount(pageLayoutMode);
 
 	const defaultCategoryCode = useMemo(
 		() => (baseOptions.category ?? EMPTY_OPTIONS)[0]?.code ?? null,
@@ -255,38 +276,87 @@ function QuickStockPage({ baseOptions, reloadCoreData }: QuickStockPageProps) {
 			)}
 
 			<Card className="surface-card">
-				<List
-					className="quick-stock-list"
-					loading={loading}
-					dataSource={items}
-					rowKey={(item) => item.id}
-					renderItem={(item) => (
-						<List.Item className="quick-stock-row">
-							<Text strong className="quick-stock-name">
-								{item.name}
-							</Text>
-							<Button
-								size="small"
-								icon={<MinusOutlined />}
-								disabled={item.currentQuantity <= 0 || !outboundReasonCode}
-								loading={rowActionKey === `${item.id}:out`}
-								onClick={() => void adjustStock(item, "out")}
-							>
-								-1
-							</Button>
-							<Text className="quick-stock-qty">{item.currentQuantity}</Text>
-							<Button
-								size="small"
-								type="primary"
-								icon={<PlusOutlined />}
-								loading={rowActionKey === `${item.id}:in`}
-								onClick={() => void adjustStock(item, "in")}
-							>
-								+1
-							</Button>
-						</List.Item>
-					)}
-				/>
+				{pageLayoutMode === "row" ? (
+					<List
+						className="quick-stock-list"
+						loading={loading}
+						dataSource={items}
+						rowKey={(item) => item.id}
+						renderItem={(item) => (
+							<List.Item className="quick-stock-row">
+								<Text strong className="quick-stock-name">
+									{item.name}
+								</Text>
+								<Button
+									size="small"
+									disabled={item.currentQuantity <= 0 || !outboundReasonCode}
+									loading={rowActionKey === `${item.id}:out`}
+									onClick={() => void adjustStock(item, "out")}
+								>
+									-1
+								</Button>
+								<Text className="quick-stock-qty">{item.currentQuantity}</Text>
+								<Button
+									size="small"
+									type="primary"
+									loading={rowActionKey === `${item.id}:in`}
+									onClick={() => void adjustStock(item, "in")}
+								>
+									+1
+								</Button>
+							</List.Item>
+						)}
+					/>
+				) : (
+					<List
+						className="layout-card-list"
+						loading={loading}
+						dataSource={items}
+						rowKey={(item) => item.id}
+						locale={{ emptyText: "暂无物品" }}
+						grid={{
+							gutter: 12,
+							column: listColumnCount,
+							xs: listColumnCount,
+							sm: listColumnCount,
+							md: listColumnCount,
+							lg: listColumnCount,
+							xl: listColumnCount,
+							xxl: listColumnCount,
+						}}
+						renderItem={(item) => (
+							<List.Item>
+								<Card className="surface-card layout-list-card">
+									<Space direction="vertical" size={10} className="layout-list-card-stack">
+										<div>
+											<Text strong>{item.name}</Text>
+											<Text> - </Text>
+											<Text>{item.currentQuantity}</Text>
+										</div>
+										<Space className="layout-list-card-actions quick-stock-card-actions">
+											<Button
+												size="small"
+												disabled={item.currentQuantity <= 0 || !outboundReasonCode}
+												loading={rowActionKey === `${item.id}:out`}
+												onClick={() => void adjustStock(item, "out")}
+											>
+												-1
+											</Button>
+											<Button
+												size="small"
+												type="primary"
+												loading={rowActionKey === `${item.id}:in`}
+												onClick={() => void adjustStock(item, "in")}
+											>
+												+1
+											</Button>
+										</Space>
+									</Space>
+								</Card>
+							</List.Item>
+						)}
+					/>
+				)}
 			</Card>
 
 			<Card className="surface-card">

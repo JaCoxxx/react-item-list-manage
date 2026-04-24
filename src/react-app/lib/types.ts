@@ -118,11 +118,15 @@ export type OcrItemLine = {
 };
 
 export type OcrReceiptResult = {
-	provider: "baidu";
-	model: "shopping_receipt";
-	wordsResultNum: number;
-	lines: string[];
+	provider: "baidu" | "gpt" | "deepseek";
+	model: string;
+	wordsResultNum?: number;
+	lines?: string[];
 	fieldLines: OcrFieldLine[];
 	itemLines: OcrItemLine[];
-	raw: Record<string, unknown>;
+	raw?: Record<string, unknown>;
 };
+
+export type PageLayoutMode = "row" | "two-column" | "three-column";
+
+export type AiProvider = "gpt" | "deepseek";

@@ -24,6 +24,7 @@ import {
 	EMPTY_OPTIONS,
 	findOptionName,
 	getDefaultItemFormValues,
+	getListColumnCount,
 	mapItemToFormValues,
 	normalizeOptionalText,
 } from "../lib/utils";
@@ -32,6 +33,7 @@ import type {
 	BaseOptionGroups,
 	InventoryItem,
 	ItemFormValues,
+	PageLayoutMode,
 } from "../lib/types";
 
 const { Text } = Typography;
@@ -40,11 +42,13 @@ const { useBreakpoint } = Grid;
 type ItemMaintenancePageProps = {
 	baseOptions: BaseOptionGroups;
 	reloadCoreData: (showToast?: boolean) => Promise<void>;
+	pageLayoutMode: PageLayoutMode;
 };
 
 function ItemMaintenancePage({
 	baseOptions,
 	reloadCoreData,
+	pageLayoutMode,
 }: ItemMaintenancePageProps) {
 	const { message } = AntdApp.useApp();
 	const screens = useBreakpoint();
@@ -62,6 +66,7 @@ function ItemMaintenancePage({
 	const categoryOptions = baseOptions.category ?? EMPTY_OPTIONS;
 	const locationOptions = baseOptions.location ?? EMPTY_OPTIONS;
 	const unitOptions = baseOptions.unit ?? EMPTY_OPTIONS;
+	const listColumnCount = getListColumnCount(pageLayoutMode);
 	const tagOptions = useMemo(() => {
 		const values = new Set<string>(selectedTagNames);
 		items.forEach((item) => {
@@ -350,59 +355,180 @@ function ItemMaintenancePage({
 			</div>
 
 			<Card className="surface-card">
-				{isMobile ? (
+				{pageLayoutMode === "row" ? (
+					isMobile ? (
+						<List
+							className="item-compact-list"
+							loading={listLoading}
+							dataSource={items}
+							locale={{ emptyText: "暂无物品，请先新增物品。" }}
+							renderItem={(item) => (
+								<List.Item
+									className="item-compact-row"
+									onClick={() => openDetailDrawer(item)}
+								>
+									<div className="item-compact-main">
+										<Text strong>{item.name}</Text>
+										<Text type="secondary">{item.code ?? "未设置编码"}</Text>
+										{item.tagNames.length > 0 ? (
+											<Space size={[4, 4]} wrap>
+												{item.tagNames.map((tagName) => (
+													<Tag key={`${item.id}:${tagName}`} className="status-tag">
+														{tagName}
+													</Tag>
+												))}
+											</Space>
+										) : null}
+									</div>
+									<Space size={8} className="item-compact-side">
+										<Text>
+											{item.currentQuantity} {findOptionName(unitOptions, item.unitCode)}
+										</Text>
+										{item.isActive ? (
+											<Tag className="mono-tag">启用</Tag>
+										) : (
+											<Tag className="status-tag">停用</Tag>
+										)}
+									</Space>
+								</List.Item>
+							)}
+						/>
+					) : (
+						<Table<InventoryItem>
+							rowKey="id"
+							loading={listLoading}
+							columns={columns}
+							dataSource={items}
+							pagination={{
+								pageSize: 12,
+								showSizeChanger: false,
+							}}
+							scroll={{ x: 980 }}
+							className="item-list-table"
+							rowClassName={() => "item-list-row"}
+							onRow={(item) => ({
+								onClick: () => openDetailDrawer(item),
+							})}
+						/>
+					)
+				) : (
 					<List
-						className="item-compact-list"
+						className="layout-card-list"
 						loading={listLoading}
 						dataSource={items}
 						locale={{ emptyText: "暂无物品，请先新增物品。" }}
+						grid={{
+							gutter: 12,
+							column: listColumnCount,
+							xs: listColumnCount,
+							sm: listColumnCount,
+							md: listColumnCount,
+							lg: listColumnCount,
+							xl: listColumnCount,
+							xxl: listColumnCount,
+						}}
 						renderItem={(item) => (
-							<List.Item
-								className="item-compact-row"
-								onClick={() => openDetailDrawer(item)}
-							>
-								<div className="item-compact-main">
-									<Text strong>{item.name}</Text>
-									<Text type="secondary">{item.code ?? "未设置编码"}</Text>
-									{item.tagNames.length > 0 ? (
-										<Space size={[4, 4]} wrap>
-											{item.tagNames.map((tagName) => (
-												<Tag key={`${item.id}:${tagName}`} className="status-tag">
-													{tagName}
-												</Tag>
-											))}
+							<List.Item>
+								<Card
+									className="surface-card layout-list-card layout-list-card-clickable"
+									onClick={() => openDetailDrawer(item)}
+								>
+									<Space direction="vertical" size={10} className="layout-list-card-stack">
+										<div>
+											<Text strong>{item.name}</Text>
+											<div>
+												<Text type="secondary">{item.code ?? "未设置编码"}</Text>
+											</div>
+										</div>
+										{item.tagNames.length > 0 ? (
+											<Space size={[4, 4]} wrap>
+												{item.tagNames.map((tagName) => (
+													<Tag key={`${item.id}:${tagName}`} className="status-tag">
+														{tagName}
+													</Tag>
+												))}
+											</Space>
+										) : null}
+										<div>
+											<Text type="secondary">库存</Text>
+											<div>
+												<Text>
+													{item.currentQuantity}{" "}
+													{findOptionName(unitOptions, item.unitCode)}
+												</Text>
+											</div>
+										</div>
+										<div>
+											{item.isActive ? (
+												<Tag className="mono-tag">启用</Tag>
+											) : (
+												<Tag className="status-tag">停用</Tag>
+											)}
+										</div>
+										<Space wrap className="layout-list-card-actions">
+											<Button
+												size="small"
+												onClick={(event) => {
+													event.stopPropagation();
+													openDetailDrawer(item);
+												}}
+											>
+												详情
+											</Button>
+											<Button
+												size="small"
+												onClick={(event) => {
+													event.stopPropagation();
+													openEditDrawer(item);
+												}}
+											>
+												编辑
+											</Button>
+											<Popconfirm
+												title="确认删除该物品？"
+												description="删除后不可恢复；存在库存记录的物品不能删除。"
+												okText="删除"
+												cancelText="取消"
+												onConfirm={() => void deleteItem(item)}
+											>
+												<Button
+													size="small"
+													danger
+													loading={rowActionKey === `${item.id}:delete`}
+													onClick={(event) => event.stopPropagation()}
+												>
+													删除
+												</Button>
+											</Popconfirm>
+											{item.isActive ? (
+												<Button
+													size="small"
+													loading={rowActionKey === `${item.id}:toggle`}
+													onClick={(event) => {
+														event.stopPropagation();
+														void toggleItemActive(item, false);
+													}}
+												>
+													禁用
+												</Button>
+											) : (
+												<Button
+													size="small"
+													type="primary"
+													loading={rowActionKey === `${item.id}:toggle`}
+													onClick={(event) => {
+														event.stopPropagation();
+														void toggleItemActive(item, true);
+													}}
+												>
+													启用
+												</Button>
+											)}
 										</Space>
-									) : null}
-								</div>
-								<Space size={8} className="item-compact-side">
-									<Text>
-										{item.currentQuantity} {findOptionName(unitOptions, item.unitCode)}
-									</Text>
-									{item.isActive ? (
-										<Tag className="mono-tag">启用</Tag>
-									) : (
-										<Tag className="status-tag">停用</Tag>
-									)}
-								</Space>
+									</Space>
+								</Card>
 							</List.Item>
 						)}
-					/>
-				) : (
-					<Table<InventoryItem>
-						rowKey="id"
-						loading={listLoading}
-						columns={columns}
-						dataSource={items}
-						pagination={{
-							pageSize: 12,
-							showSizeChanger: false,
-						}}
-						scroll={{ x: 980 }}
-						className="item-list-table"
-						rowClassName={() => "item-list-row"}
-						onRow={(item) => ({
-							onClick: () => openDetailDrawer(item),
-						})}
 					/>
 				)}
 			</Card>

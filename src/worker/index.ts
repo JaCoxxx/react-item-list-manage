@@ -6,6 +6,8 @@ type AppBindings = {
 		BAIDU_OCR_API_KEY?: string;
 		BAIDU_OCR_SECRET_KEY?: string;
 		BAIDU_OCR_RECEIPT_API_URL?: string;
+		OPENAI_API_KEY?: string;
+		DEEPSEEK_API_KEY?: string;
 	};
 };
 
@@ -127,6 +129,25 @@ type OcrItemLine = {
 	subtotalAmount: string;
 };
 
+type AiCommandAction = "stock_in" | "stock_out" | "create_item" | "unsupported";
+type AiProvider = "gpt" | "deepseek";
+
+type AiCommandParseResult = {
+	action: AiCommandAction;
+	confidence: number;
+	reply: string;
+	params: {
+		itemName?: string;
+		itemCode?: string;
+		quantity?: number;
+		reasonCode?: string;
+		categoryCode?: string;
+		unitCode?: string;
+		locationCode?: string;
+		note?: string;
+	};
+};
+
 class ApiError extends Error {
 	status: number;
 	details?: unknown;
@@ -238,6 +259,7 @@ const apiIndexHandler = (c: Context<AppBindings>) =>
 				"/api/dashboard",
 				"/api/alerts",
 				"/api/ocr/baidu/receipt",
+				"/api/ai/command/parse",
 			],
 		},
 	});
@@ -1690,6 +1712,358 @@ app.post("/api/ocr/baidu/receipt", async (c) => {
 			itemLines: parsedResult.itemLines,
 			raw: ocrResult,
 		},
+	});
+});
+
+const OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions";
+const DEEPSEEK_CHAT_URL = "https://api.deepseek.com/chat/completions";
+const OPENAI_COMMAND_SYSTEM_PROMPT = `你是库存系统的操作意图解析器。你必须把用户自然语言解析成一个 JSON。
+你只能识别以下 action：
+- stock_in（入库）
+- stock_out（出库）
+- create_item（新增物品）
+如果无法确定，action 必须是 unsupported。
+
+输出 JSON 格式：
+{
+	"action": "stock_in|stock_out|create_item|unsupported",
+	"confidence": 0到1之间数字,
+	"reply": "给用户的简短中文回复",
+	"params": {
+		"itemName": "物品名",
+		"itemCode": "物品编码",
+		"quantity": 数字,
+		"reasonCode": "出库原因编码",
+		"categoryCode": "分类编码",
+		"unitCode": "单位编码",
+		"locationCode": "位置编码",
+		"note": "备注"
+	}
+}
+
+规则：
+1) 只输出 JSON，不要输出其他文本。
+2) 如果没有字段，不要编造；缺失字段可省略。
+3) quantity 必须是正数；若用户未提及则省略。
+4) 对于非库存操作（如删除、修改价格、查询天气），action=unsupported。`;
+const OPENAI_RECEIPT_SYSTEM_PROMPT = `你是一个购物小票信息提取助手。用户会上传一张购物小票图片，你需要从中提取结构化数据。
+请返回一个 JSON 对象，格式如下：
+{
+  "fieldLines": [
+    { "id": "field_1", "key": "shop_name", "label": "店铺名称", "value": "..." },
+    { "id": "field_2", "key": "consumption_date", "label": "消费日期", "value": "YYYY-MM-DD 格式" },
+    { "id": "field_3", "key": "total_amount", "label": "总金额", "value": "..." }
+  ],
+  "itemLines": [
+    { "id": "item_1", "product": "商品名称", "quantity": "数量（纯数字）", "unitPrice": "单价（纯数字）", "subtotalAmount": "小计（纯数字）" }
+  ]
+}
+fieldLines 包括：shop_name（店铺名称）、receipt_num（小票号）、consumption_date（消费日期，格式 YYYY-MM-DD）、consumption_time（消费时间）、total_amount（总金额）、paid_amount（实付金额）、discount（优惠金额）中存在的字段。
+itemLines 中每个商品单独一行，quantity/unitPrice/subtotalAmount 只填写纯数字字符串，如果无法识别则填写空字符串。
+只返回 JSON，不要有任何额外说明。`;
+
+function parseAiProvider(value: unknown): AiProvider {
+	return value === "deepseek" ? "deepseek" : "gpt";
+}
+
+function resolveAiProviderConfig(c: Context<AppBindings>, provider: AiProvider) {
+	if (provider === "deepseek") {
+		const apiKey = c.env.DEEPSEEK_API_KEY;
+		if (!apiKey) {
+			throw new ApiError(503, "DeepSeek API Key 未配置，请在环境变量中设置 DEEPSEEK_API_KEY。");
+		}
+
+		return {
+			provider,
+			providerName: "DeepSeek",
+			apiUrl: DEEPSEEK_CHAT_URL,
+			apiKey,
+			receiptModel: "deepseek-chat",
+			commandModel: "deepseek-chat",
+		};
+	}
+
+	const apiKey = c.env.OPENAI_API_KEY;
+	if (!apiKey) {
+		throw new ApiError(503, "OpenAI API Key 未配置，请在环境变量中设置 OPENAI_API_KEY。");
+	}
+
+	return {
+		provider,
+		providerName: "OpenAI",
+		apiUrl: OPENAI_CHAT_URL,
+		apiKey,
+		receiptModel: "gpt-4o",
+		commandModel: "gpt-4o-mini",
+	};
+}
+
+function buildProviderErrorMessage(providerName: string, status: number, message?: string) {
+	if (message) {
+		return message;
+	}
+
+	return `${providerName} API error: ${status}`;
+}
+
+async function parseChatJsonContent(
+	response: Response,
+	providerName: string,
+	emptyMessage: string,
+	invalidJsonMessage: string
+) {
+	if (!response.ok) {
+		let errorMessage = buildProviderErrorMessage(providerName, response.status);
+		try {
+			const errorBody = (await response.json()) as { error?: { message?: string } };
+			errorMessage = buildProviderErrorMessage(
+				providerName,
+				response.status,
+				errorBody.error?.message
+			);
+		} catch {
+			// ignore json parse error
+		}
+		throw new ApiError(502, errorMessage);
+	}
+
+	const result = (await response.json()) as {
+		choices?: Array<{ message?: { content?: string } }>;
+	};
+
+	const content = result.choices?.[0]?.message?.content;
+	if (!content) {
+		throw new ApiError(502, emptyMessage);
+	}
+
+	const jsonText = content
+		.replace(/^```(?:json)?\s*/i, "")
+		.replace(/\s*```\s*$/i, "")
+		.trim();
+
+	try {
+		return JSON.parse(jsonText) as unknown;
+	} catch {
+		throw new ApiError(502, invalidJsonMessage);
+	}
+}
+
+async function requestAiReceiptOcr(
+	providerConfig: ReturnType<typeof resolveAiProviderConfig>,
+	imageBase64: string,
+	mimeType: string
+): Promise<{ fieldLines: unknown[]; itemLines: unknown[] }> {
+	const response = await fetch(providerConfig.apiUrl, {
+		method: "POST",
+		headers: {
+			"content-type": "application/json",
+			authorization: `Bearer ${providerConfig.apiKey}`,
+		},
+		body: JSON.stringify({
+			model: providerConfig.receiptModel,
+			max_tokens: 2048,
+			messages: [
+				{
+					role: "system",
+					content: OPENAI_RECEIPT_SYSTEM_PROMPT,
+				},
+				{
+					role: "user",
+					content: [
+						{
+							type: "image_url",
+							image_url: {
+								url: `data:${mimeType};base64,${imageBase64}`,
+								detail: "high",
+							},
+						},
+						{
+							type: "text",
+							text: "请识别这张购物小票并返回结构化 JSON。",
+						},
+					],
+				},
+			],
+		}),
+	});
+
+	const parsed = (await parseChatJsonContent(
+		response,
+		providerConfig.providerName,
+		`${providerConfig.providerName} 返回了空的响应内容`,
+		`${providerConfig.providerName} 返回的内容无法解析为 JSON`
+	)) as { fieldLines?: unknown[]; itemLines?: unknown[] };
+
+	return {
+		fieldLines: Array.isArray(parsed.fieldLines) ? parsed.fieldLines : [],
+		itemLines: Array.isArray(parsed.itemLines) ? parsed.itemLines : [],
+	};
+}
+
+async function requestAiCommandParse(
+	providerConfig: ReturnType<typeof resolveAiProviderConfig>,
+	text: string
+): Promise<AiCommandParseResult> {
+	const response = await fetch(providerConfig.apiUrl, {
+		method: "POST",
+		headers: {
+			"content-type": "application/json",
+			authorization: `Bearer ${providerConfig.apiKey}`,
+		},
+		body: JSON.stringify({
+			model: providerConfig.commandModel,
+			max_tokens: 600,
+			messages: [
+				{
+					role: "system",
+					content: OPENAI_COMMAND_SYSTEM_PROMPT,
+				},
+				{
+					role: "user",
+					content: text,
+				},
+			],
+		}),
+	});
+
+	const parsed = (await parseChatJsonContent(
+		response,
+		providerConfig.providerName,
+		`${providerConfig.providerName} 返回了空的响应内容`,
+		`${providerConfig.providerName} 返回的内容无法解析为 JSON`
+	)) as Partial<AiCommandParseResult> & { params?: Record<string, unknown> };
+
+	const validActions: AiCommandAction[] = [
+		"stock_in",
+		"stock_out",
+		"create_item",
+		"unsupported",
+	];
+	const action = validActions.includes(parsed.action as AiCommandAction)
+		? (parsed.action as AiCommandAction)
+		: "unsupported";
+	const confidence =
+		typeof parsed.confidence === "number" && Number.isFinite(parsed.confidence)
+			? Math.max(0, Math.min(1, parsed.confidence))
+			: 0;
+	const params = parsed.params ?? {};
+
+	return {
+		action,
+		confidence,
+		reply:
+			typeof parsed.reply === "string" && parsed.reply.trim().length > 0
+				? parsed.reply.trim()
+				: "已解析你的指令。",
+		params: {
+			itemName: typeof params.itemName === "string" ? params.itemName.trim() : undefined,
+			itemCode: typeof params.itemCode === "string" ? params.itemCode.trim() : undefined,
+			quantity:
+				typeof params.quantity === "number" &&
+				Number.isFinite(params.quantity) &&
+				params.quantity > 0
+					? params.quantity
+					: undefined,
+			reasonCode:
+				typeof params.reasonCode === "string" ? params.reasonCode.trim() : undefined,
+			categoryCode:
+				typeof params.categoryCode === "string" ? params.categoryCode.trim() : undefined,
+			unitCode: typeof params.unitCode === "string" ? params.unitCode.trim() : undefined,
+			locationCode:
+				typeof params.locationCode === "string" ? params.locationCode.trim() : undefined,
+			note: typeof params.note === "string" ? params.note.trim() : undefined,
+		},
+	};
+}
+
+function validateOpenAiFieldLines(raw: unknown[]): OcrFieldLine[] {
+	return raw
+		.filter(
+			(item): item is Record<string, unknown> =>
+				typeof item === "object" && item !== null
+		)
+		.map((item, index) => ({
+			id: typeof item.id === "string" ? item.id : `field_${index + 1}`,
+			key: typeof item.key === "string" ? item.key : `field_${index + 1}`,
+			label: typeof item.label === "string" ? item.label : String(item.key ?? `字段${index + 1}`),
+			value: typeof item.value === "string" ? item.value : String(item.value ?? ""),
+		}));
+}
+
+function validateOpenAiItemLines(raw: unknown[]): OcrItemLine[] {
+	return raw
+		.filter(
+			(item): item is Record<string, unknown> =>
+				typeof item === "object" && item !== null
+		)
+		.map((item, index) => ({
+			id: typeof item.id === "string" ? item.id : `item_${index + 1}`,
+			product: typeof item.product === "string" ? item.product : String(item.product ?? ""),
+			quantity: typeof item.quantity === "string" ? item.quantity : String(item.quantity ?? ""),
+			unitPrice: typeof item.unitPrice === "string" ? item.unitPrice : String(item.unitPrice ?? ""),
+			subtotalAmount: typeof item.subtotalAmount === "string" ? item.subtotalAmount : String(item.subtotalAmount ?? ""),
+		}));
+}
+
+app.post("/api/ocr/openai/receipt", async (c) => {
+	let formData: FormData;
+	try {
+		formData = await c.req.formData();
+	} catch {
+		throw new ApiError(400, "Request body must be multipart/form-data.");
+	}
+
+	const imageFile = formData.get("image");
+	if (!(imageFile instanceof File)) {
+		throw new ApiError(400, "image file is required.");
+	}
+
+	if (!imageFile.type.startsWith("image/")) {
+		throw new ApiError(400, "Only image file uploads are supported.");
+	}
+
+	const imageBuffer = await imageFile.arrayBuffer();
+	if (imageBuffer.byteLength <= 0) {
+		throw new ApiError(400, "Uploaded image cannot be empty.");
+	}
+
+	// OpenAI supports up to 20MB but we cap at 8MB consistent with Baidu
+	const maxBytes = 8 * 1024 * 1024;
+	if (imageBuffer.byteLength > maxBytes) {
+		throw new ApiError(400, "Uploaded image is too large.");
+	}
+
+	const provider = parseAiProvider(formData.get("provider"));
+	const providerConfig = resolveAiProviderConfig(c, provider);
+
+	const imageBase64 = btoa(
+		String.fromCharCode(...new Uint8Array(imageBuffer))
+	);
+	const mimeType = imageFile.type;
+
+	const raw = await requestAiReceiptOcr(providerConfig, imageBase64, mimeType);
+	const fieldLines = validateOpenAiFieldLines(raw.fieldLines);
+	const itemLines = validateOpenAiItemLines(raw.itemLines);
+
+	return c.json({
+		data: {
+			provider: providerConfig.provider,
+			model: providerConfig.receiptModel,
+			fieldLines,
+			itemLines,
+		},
+	});
+});
+
+app.post("/api/ai/command/parse", async (c) => {
+	const payload = await readJson<Record<string, unknown>>(c);
+	const text = getRequiredString(payload, "text");
+	const provider = parseAiProvider(payload.provider);
+	const providerConfig = resolveAiProviderConfig(c, provider);
+	const parsed = await requestAiCommandParse(providerConfig, text);
+
+	return c.json({
+		data: parsed,
 	});
 });
 

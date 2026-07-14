@@ -8,6 +8,7 @@ if (typeof globalThis.File === "undefined") {
 }
 
 const configDir = path.dirname(fileURLToPath(import.meta.url));
+const workspaceRootDir = path.resolve(configDir, "../..");
 
 export default defineConfig(async () => {
 	const [{ default: react }, { cloudflare }] = await Promise.all([
@@ -22,11 +23,14 @@ export default defineConfig(async () => {
 		plugins: [react(), cloudflare({ remoteBindings: remoteBindingsEnabled })],
 		resolve: {
 			alias: {
-				react: path.resolve(configDir, "node_modules/react"),
-				"react-dom": path.resolve(configDir, "node_modules/react-dom"),
-				"react/jsx-runtime": path.resolve(configDir, "node_modules/react/jsx-runtime.js"),
+				react: path.resolve(workspaceRootDir, "node_modules/react"),
+				"react-dom": path.resolve(workspaceRootDir, "node_modules/react-dom"),
+				"react/jsx-runtime": path.resolve(
+					workspaceRootDir,
+					"node_modules/react/jsx-runtime.js",
+				),
 				"react/jsx-dev-runtime": path.resolve(
-					configDir,
+					workspaceRootDir,
 					"node_modules/react/jsx-dev-runtime.js",
 				),
 			},

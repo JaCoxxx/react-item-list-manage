@@ -1,0 +1,15 @@
+{
+	"bsonType": "object",
+	"required": ["tag_name"],
+	"permission": {
+		"read": true,
+		"create": true,
+		"update": true,
+		"delete": true
+	},
+	"properties": {
+		"tag_name": { "bsonType": "string" },
+		"created_at": { "bsonType": "string" },
+		"updated_at": { "bsonType": "string" }
+	}
+}

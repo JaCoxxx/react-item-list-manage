@@ -1,0 +1,23 @@
+{
+	"bsonType": "object",
+	"required": ["item_name", "category_code", "unit_code"],
+	"permission": {
+		"read": true,
+		"create": true,
+		"update": true,
+		"delete": true
+	},
+	"properties": {
+		"item_name": { "bsonType": "string" },
+		"item_code": { "bsonType": "string" },
+		"category_code": { "bsonType": "string" },
+		"unit_code": { "bsonType": "string" },
+		"default_location_code": { "bsonType": "string" },
+		"default_shelf_life_days": { "bsonType": "int" },
+		"min_stock_alert": { "bsonType": "double" },
+		"remark": { "bsonType": "string" },
+		"is_active": { "bsonType": "bool" },
+		"created_at": { "bsonType": "string" },
+		"updated_at": { "bsonType": "string" }
+	}
+}

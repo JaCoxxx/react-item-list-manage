@@ -1,0 +1,20 @@
+{
+	"bsonType": "object",
+	"required": ["option_type", "option_code", "option_name"],
+	"permission": {
+		"read": true,
+		"create": true,
+		"update": true,
+		"delete": true
+	},
+	"properties": {
+		"option_type": { "bsonType": "string" },
+		"option_code": { "bsonType": "string" },
+		"option_name": { "bsonType": "string" },
+		"sort_order": { "bsonType": "int" },
+		"is_active": { "bsonType": "bool" },
+		"remark": { "bsonType": "string" },
+		"created_at": { "bsonType": "string" },
+		"updated_at": { "bsonType": "string" }
+	}
+}

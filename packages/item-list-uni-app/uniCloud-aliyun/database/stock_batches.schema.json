@@ -1,0 +1,22 @@
+{
+	"bsonType": "object",
+	"required": ["item_id", "quantity", "purchased_at"],
+	"permission": {
+		"read": true,
+		"create": true,
+		"update": true,
+		"delete": true
+	},
+	"properties": {
+		"item_id": { "bsonType": "string" },
+		"quantity": { "bsonType": "double" },
+		"purchased_at": { "bsonType": "string" },
+		"production_date": { "bsonType": "string" },
+		"expiry_date": { "bsonType": "string" },
+		"location_code": { "bsonType": "string" },
+		"supplier": { "bsonType": "string" },
+		"unit_price": { "bsonType": "double" },
+		"note": { "bsonType": "string" },
+		"created_at": { "bsonType": "string" }
+	}
+}

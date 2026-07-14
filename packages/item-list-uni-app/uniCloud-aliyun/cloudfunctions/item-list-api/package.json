@@ -1,0 +1,12 @@
+{
+	"name": "item-list-api",
+	"version": "1.0.0",
+	"description": "家庭物品清单 uniCloud API (Hono)",
+	"main": "index.js",
+	"dependencies": {
+		"hono": "4.11.1"
+	},
+	"cloudfunction-config": {
+		"runtime": "Nodejs18"
+	}
+}

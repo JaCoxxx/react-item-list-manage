@@ -1,0 +1,22 @@
+{
+	"bsonType": "object",
+	"required": ["item_id", "movement_type", "quantity", "movement_date"],
+	"permission": {
+		"read": true,
+		"create": true,
+		"update": true,
+		"delete": true
+	},
+	"properties": {
+		"item_id": { "bsonType": "string" },
+		"batch_id": { "bsonType": "string" },
+		"movement_type": { "bsonType": "string" },
+		"quantity": { "bsonType": "double" },
+		"movement_date": { "bsonType": "string" },
+		"reason_code": { "bsonType": "string" },
+		"location_code": { "bsonType": "string" },
+		"unit_price": { "bsonType": "double" },
+		"note": { "bsonType": "string" },
+		"created_at": { "bsonType": "string" }
+	}
+}

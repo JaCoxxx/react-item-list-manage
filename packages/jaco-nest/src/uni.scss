@@ -1,0 +1,98 @@
+/**
+ * uni-app 内置常用样式变量
+ *
+ * 这里把 uni-ui（uni_modules）依赖的颜色变量映射到 jn- 主题的 CSS 变量
+ * （var(--jn-color-*)，定义在 src/theme/themes.css 的 .jn-theme-<name> 类里）。
+ * 由于 uni.scss 会被 uni-app 全局注入到每个 <style lang="scss"> 顶部，
+ * uni-ui 组件里 `$uni-primary: #2979ff !default` 之类的声明会因已在此处赋值而被跳过，
+ * 从而跟随主题切换即时变色（无需改组件代码）。
+ *
+ * 尺寸/圆角/间距/字体保持固定 px，不随主题变化。
+ */
+
+/* ========== 主题色（跟随 jn- 主题） ========== */
+
+/* 行为相关颜色 - uni-scss 命名（uni-ui 组件主要使用这组） */
+$uni-primary: var(--jn-color-primary);
+$uni-success: var(--jn-color-success);
+$uni-warning: var(--jn-color-warning);
+$uni-error: var(--jn-color-danger);
+$uni-info: var(--jn-color-text-tertiary);
+
+/* 行为相关颜色 - app 命名（部分组件如 uni-calendar 使用） */
+$uni-color-primary: var(--jn-color-primary);
+$uni-color-success: var(--jn-color-success);
+$uni-color-warning: var(--jn-color-warning);
+$uni-color-error: var(--jn-color-danger);
+
+/* 中性文字色 */
+$uni-main-color: var(--jn-color-text-primary); // 主要文字
+$uni-base-color: var(--jn-color-text-secondary); // 常规文字
+$uni-secondary-color: var(--jn-color-text-tertiary); // 次要文字
+$uni-extra-color: var(--jn-color-text-tertiary); // 辅助说明
+
+/* 文字基本颜色 */
+$uni-text-color: var(--jn-color-text-primary); // 基本色
+$uni-text-color-inverse: var(--jn-color-text-inverse); // 反色
+$uni-text-color-grey: var(--jn-color-text-secondary); // 辅助灰色
+$uni-text-color-placeholder: var(--jn-color-text-tertiary);
+$uni-text-color-disable: var(--jn-color-text-tertiary);
+
+/* 文章场景相关（app 命名） */
+$uni-color-title: var(--jn-color-text-primary);
+$uni-color-subtitle: var(--jn-color-text-secondary);
+$uni-color-paragraph: var(--jn-color-text-secondary);
+
+/* 背景颜色 */
+$uni-bg-color: var(--jn-color-page-bg);
+$uni-bg-color-grey: var(--jn-color-page-bg);
+$uni-bg-color-hover: var(--jn-color-surface-muted);
+$uni-bg-color-mask: var(--jn-color-overlay);
+
+/* 边框颜色 */
+$uni-border-color: var(--jn-color-border);
+$uni-border-1: var(--jn-color-divider); // 最浅
+$uni-border-2: var(--jn-color-divider);
+$uni-border-3: var(--jn-color-border);
+$uni-border-4: var(--jn-color-border); // 最深
+
+/* 常规色也使用主题语义变量，保证组件内的默认值可随主题级联。 */
+$uni-black: var(--jn-color-text-primary);
+$uni-white: var(--jn-color-surface-solid);
+$uni-transparent: var(--jn-color-transparent);
+
+/* ========== 固定值（不随主题） ========== */
+
+/* 文字尺寸 */
+$uni-font-size-sm: 12px;
+$uni-font-size-base: 14px;
+$uni-font-size-lg: 16px;
+
+/* 图片尺寸 */
+$uni-img-size-sm: 20px;
+$uni-img-size-base: 26px;
+$uni-img-size-lg: 40px;
+
+/* Border Radius */
+$uni-border-radius-sm: 2px;
+$uni-border-radius-base: 3px;
+$uni-border-radius-lg: 6px;
+$uni-border-radius-circle: 50%;
+
+/* 水平间距 */
+$uni-spacing-row-sm: 5px;
+$uni-spacing-row-base: 10px;
+$uni-spacing-row-lg: 15px;
+
+/* 垂直间距 */
+$uni-spacing-col-sm: 4px;
+$uni-spacing-col-base: 8px;
+$uni-spacing-col-lg: 12px;
+
+/* 透明度 */
+$uni-opacity-disabled: 0.3; // 组件禁用态的透明度
+
+/* 文章场景相关尺寸 */
+$uni-font-size-title: 20px;
+$uni-font-size-subtitle: 18px;
+$uni-font-size-paragraph: 15px;

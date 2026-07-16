@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
 ## Repository layout
 
@@ -9,11 +9,9 @@ pnpm/npm workspace monorepo. All code lives under `packages/`:
 - **`packages/react-item-list-manage`** — the original full-stack app: a single Cloudflare Worker (Hono API + React SPA served as Worker static assets) backed by Cloudflare D1. This is the only deployable.
 - **`packages/item-list-uni-app`** — a mobile-first uni-app (Vue 3) frontend that consumes the *same* `/api/*` backend. Targets both H5 and WeChat Mini Program (AppID `wxfd5d4c43d1f9dcdb` in `src/manifest.json`). H5 dev proxies `/api/*` to the Worker; the Mini Program has no dev proxy and requires an absolute `VITE_API_BASE_URL`.
 
-- **`packages/jaco-nest`** - a uni-app + Vite + UnoCSS scaffold (vitesse-uni-app / uni-helper toolchain: `unh` CLI, `manifest.config.ts`/`pages.config.ts` TS config -> generated `src/manifest.json`/`src/pages.json`, file-based routing via `definePage`, `src/layouts/`, auto-imported components/composables/utils/stores, UnoCSS for styling, Pinia (`src/stores`, pinned `pinia@2.2.4` for Vue 3.4.21 compat), vitest). Holds the reusable custom-nav foundation: `AppHeader` (left back/home/auto, title align L/C/R, right single button or ⋯ action-sheet) + `PageLayout` (optional header) + `useAppHeader` composable + `src/types/header.ts` + `getStatusBarHeight`. Also a `jn-`-prefixed theme system: `src/theme/themes.css` + images + `useTheme` composable (instant switch via `<html>` class on H5; see `src/theme/THEME_GUIDE.md`). `navigationStyle: 'custom'` is set globally in `pages.config.ts`. Not a deployable. Needs Node 20+ to build (`pnpm build`/`unh build`); Node 22 to lint (`pnpm lint`, per `.node-version`); `pnpm type-check` works on Node 18.
-
 Both frontends target the same backend API and duplicate their type definitions (`react-app/lib/types.ts` vs `shared/types.ts`). **Keep both in sync when the API shape changes.**
 
-Dependencies are hoisted to the repo-root `node_modules`. Sub-package scripts invoke binaries via `../../node_modules/...` paths, so install at the root, not per-package. **Use `pnpm install`** - the lockfile is `pnpm-lock.yaml` and `npm install` crashes on this workspace (npm 10.x arborist `Link.matches` bug with workspaces and no `package-lock.json`). Running scripts via `npm run --workspace` is fine; only `install` must go through pnpm.
+Dependencies are hoisted to the repo-root `node_modules`. Sub-package scripts invoke binaries via `../../node_modules/...` paths, so install at the root, not per-package.
 
 ## Common commands
 
@@ -22,8 +20,6 @@ Run from the **repo root**. Root `package.json` delegates to workspaces:
 ```bash
 npm run dev            # Worker dev server (Hono API + React SPA) at :5173, auto-inits local D1
 npm run dev:uni        # uni-app H5 frontend (proxies /api/* to :5173)
-npm run dev:jaco       # jaco-nest uni-app dev (UnoCSS scaffold, H5; needs Node 20+)
-npm run build:jaco     # build jaco-nest (H5; needs Node 20+)
 npm run dev:remote-db  # Worker dev using REMOTE D1 bindings (needs `npx wrangler login` + Node 20+)
 npm run build          # builds both packages
 npm run lint           # eslint (react) + vue-tsc (uni-app)

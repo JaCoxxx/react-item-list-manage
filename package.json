@@ -11,8 +11,10 @@
 		"deploy": "npm run deploy --workspace react-item-list-manage",
 		"dev": "npm run dev --workspace react-item-list-manage",
 		"dev:uni": "npm run dev --workspace item-list-uni-app",
+		"dev:jaco": "npm run dev --workspace jaco-nest",
 		"dev:mp-weixin": "npm run dev:mp-weixin --workspace item-list-uni-app",
 		"build:mp-weixin": "npm run build:mp-weixin --workspace item-list-uni-app",
+		"build:jaco": "npm run build --workspace jaco-nest",
 		"dev:remote-db": "npm run dev:remote-db --workspace react-item-list-manage",
 		"lint": "npm run lint --workspace react-item-list-manage && npm run lint --workspace item-list-uni-app",
 		"preview": "npm run preview --workspace react-item-list-manage"

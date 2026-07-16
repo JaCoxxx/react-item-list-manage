@@ -1,0 +1,31 @@
+// 间距基础倍数
+$uni-space-root: 2;
+// 边框半径默认值
+$uni-radius-root:5px;
+// 主色
+$uni-primary: var(--jn-color-primary);
+// 辅助色
+$uni-success: var(--jn-color-success);
+// 警告色
+$uni-warning: var(--jn-color-warning);
+// 错误色
+$uni-error: var(--jn-color-danger);
+// 描述色
+$uni-info: var(--jn-color-text-tertiary);
+// 中性色
+$uni-main-color: var(--jn-color-text-primary);
+$uni-base-color: var(--jn-color-text-secondary);
+$uni-secondary-color: var(--jn-color-text-tertiary);
+$uni-extra-color: var(--jn-color-text-tertiary);
+// 背景色
+$uni-bg-color: var(--jn-color-surface-muted);
+// 边框颜色
+$uni-border-1: var(--jn-color-border);
+$uni-border-2: var(--jn-color-border);
+$uni-border-3: var(--jn-color-border);
+$uni-border-4: var(--jn-color-surface-muted);
+
+// 常规色
+$uni-black: var(--jn-color-text-primary);
+$uni-white: var(--jn-color-surface-solid);
+$uni-transparent: var(--jn-color-transparent);

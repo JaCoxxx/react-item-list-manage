@@ -1,0 +1,167 @@
+/* #ifndef APP-NVUE */
+
+$-color-white:var(--jn-color-text-inverse);
+$-color-black:var(--jn-color-text-primary);
+@mixin base-style($color) {
+	color: var(--jn-color-text-inverse);
+	background-color: $color;
+	border-color: var(--jn-color-border);
+	&:not([hover-class]):active {
+		background: $color;
+		border-color: $color;
+		color: $-color-white;
+		outline: none;
+	}
+}
+@mixin is-color($color) {
+	@include base-style($color);
+	&[loading] {
+		@include base-style($color);
+		&::before {
+			margin-right:5px;
+		}
+	}
+	&[disabled] {
+	  &,
+		&[loading],
+	  &:not([hover-class]):active {
+	    color: $-color-white;
+			border-color: var(--jn-color-border);
+	    background-color: $color;
+	  }
+	}
+
+}
+@mixin base-plain-style($color) {
+	color:$color;
+	background-color: var(--jn-color-surface-muted);
+	border-color: $color;
+	&:not([hover-class]):active {
+	  background: $color;
+	  color: $color;
+	  outline: none;
+		border-color: $color;
+	}
+}
+@mixin is-plain($color){
+	&[plain] {
+		@include base-plain-style($color);
+		&[loading] {
+			@include base-plain-style($color);
+			&::before {
+				margin-right:5px;
+			}
+		}
+		&[disabled] {
+		  &,
+		  &:active {
+		    color: var(--jn-color-text-tertiary);
+		    background-color: var(--jn-color-surface-muted);
+				border-color: var(--jn-color-border);
+		  }
+		}
+	}
+}
+
+
+.uni-btn {
+	margin: 5px;
+	color: var(--jn-color-text-primary);
+	border:1px solid var(--jn-color-border);
+	font-size: 16px;
+	font-weight: 200;
+	background-color: var(--jn-color-surface-muted);
+	// TODO 暂时处理边框隐藏一边的问题
+	overflow: visible;
+	&::after{
+		border: none;
+	}
+
+	&:not([type]),&[type=default] {
+		color: var(--jn-color-text-tertiary);
+		&[loading] {
+			background: none;
+			&::before {
+				margin-right:5px;
+			}
+		}
+
+
+
+		&[disabled]{
+			color: var(--jn-color-text-tertiary);
+		  &,
+			&[loading],
+		  &:active {
+				color: var(--jn-color-text-tertiary);
+		    background-color: var(--jn-color-surface-muted);
+				border-color: var(--jn-color-border);
+		  }
+		}
+
+		&[plain] {
+			color: var(--jn-color-text-tertiary);
+			background: none;
+			border-color: $uni-border-1;
+			&:not([hover-class]):active {
+				background: none;
+			  color: var(--jn-color-text-primary);
+				border-color: var(--jn-color-border);
+			  outline: none;
+			}
+			&[disabled]{
+			  &,
+				&[loading],
+			  &:active {
+			    background: none;
+					color: var(--jn-color-text-tertiary);
+					border-color: var(--jn-color-border);
+			  }
+			}
+		}
+	}
+
+	&:not([hover-class]):active {
+	  color: var(--jn-color-text-primary);
+	}
+
+	&[size=mini] {
+		font-size: 16px;
+		font-weight: 200;
+		border-radius: 8px;
+	}
+
+
+
+	&.uni-btn-small {
+		font-size: 14px;
+	}
+	&.uni-btn-mini {
+		font-size: 12px;
+	}
+
+	&.uni-btn-radius {
+		border-radius: 999px;
+	}
+	&[type=primary] {
+		@include is-color($uni-primary);
+		@include is-plain($uni-primary)
+	}
+	&[type=success] {
+		@include is-color($uni-success);
+		@include is-plain($uni-success)
+	}
+	&[type=error] {
+		@include is-color($uni-error);
+		@include is-plain($uni-error)
+	}
+	&[type=warning] {
+		@include is-color($uni-warning);
+		@include is-plain($uni-warning)
+	}
+	&[type=info] {
+		@include is-color($uni-info);
+		@include is-plain($uni-info)
+	}
+}
+/* #endif */

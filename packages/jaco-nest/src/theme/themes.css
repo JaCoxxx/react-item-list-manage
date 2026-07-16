@@ -1,0 +1,1206 @@
+/*
+ * jaco-nest 主题样式（jn- 前缀）
+ * 每个主题是一个 .jn-theme-<name> 类，定义 --jn-* 语义变量。
+ * 切换时把该类挂到 <html>（H5，见 useTheme.initTheme/setTheme）或页面根节点（MP），
+ * CSS 变量级联即时生效，无需刷新浏览器。组件只使用 var(--jn-*)，不直接写主题色值。
+ */
+
+.jn-theme-morning-mist {
+  --jn-theme-name: 'morning-mist';
+  --jn-color-page-bg: #f3f8f1;
+  --jn-color-surface: rgba(255, 255, 255, 0.78);
+  --jn-color-surface-solid: #ffffff;
+  --jn-color-surface-muted: rgba(231, 243, 231, 0.82);
+  --jn-color-text-primary: #20362f;
+  --jn-color-text-secondary: #5c746d;
+  --jn-color-text-tertiary: #8da49c;
+  --jn-color-text-inverse: #ffffff;
+  --jn-color-border: rgba(111, 151, 139, 0.22);
+  --jn-color-divider: rgba(111, 151, 139, 0.14);
+  --jn-color-primary: #54a995;
+  --jn-color-primary-hover: #438f7e;
+  --jn-color-primary-soft: #d8eee6;
+  --jn-color-secondary: #87c8b2;
+  --jn-color-accent: #e4bd68;
+  --jn-color-success: #55ae78;
+  --jn-color-warning: #d99a42;
+  --jn-color-danger: #d66c6c;
+  --jn-color-success-soft: rgba(85, 174, 120, 0.16);
+  --jn-color-warning-soft: rgba(217, 154, 66, 0.16);
+  --jn-color-danger-soft: rgba(214, 108, 108, 0.16);
+  --jn-color-surface-overlay: rgba(255, 255, 255, 0.5);
+  --jn-color-surface-overlay-strong: rgba(255, 255, 255, 0.8);
+  --jn-color-overlay-subtle: rgba(32, 54, 47, 0.06);
+  --jn-color-overlay-light: rgba(32, 54, 47, 0.12);
+  --jn-color-overlay-soft: rgba(32, 54, 47, 0.2);
+  --jn-color-overlay-medium: rgba(32, 54, 47, 0.3);
+  --jn-color-overlay: rgba(32, 54, 47, 0.4);
+  --jn-color-overlay-strong: rgba(32, 54, 47, 0.5);
+  --jn-color-overlay-heavy: rgba(32, 54, 47, 0.6);
+  --jn-color-overlay-opaque: rgba(32, 54, 47, 0.9);
+  --jn-color-transparent: transparent;
+  --jn-shadow-card: 0 20rpx 52rpx rgba(63, 119, 103, 0.16);
+  --jn-shadow-button: 0 12rpx 28rpx rgba(84, 169, 149, 0.28);
+  --jn-radius-card: 40rpx;
+  --jn-radius-control: 24rpx;
+  --jn-card-backdrop-filter: blur(20px) saturate(1.08);
+  --jn-bg-image: url('./morning-mist.png');
+  --jn-preview-image: url('./morning-mist-preview.png');
+  --jn-surface-image: linear-gradient(135deg, rgba(239, 248, 241, 0.44), rgba(117, 164, 145, 0.1));
+}
+
+.jn-theme-deep-ocean {
+  --jn-theme-name: 'deep-ocean';
+  --jn-color-page-bg: #071633;
+  --jn-color-surface: rgba(15, 38, 82, 0.82);
+  --jn-color-surface-solid: #102957;
+  --jn-color-surface-muted: rgba(25, 53, 105, 0.8);
+  --jn-color-text-primary: #eef5ff;
+  --jn-color-text-secondary: #a8c2e8;
+  --jn-color-text-tertiary: #6f8fbd;
+  --jn-color-text-inverse: #071633;
+  --jn-color-border: rgba(111, 178, 255, 0.2);
+  --jn-color-divider: rgba(111, 178, 255, 0.14);
+  --jn-color-primary: #55b9f4;
+  --jn-color-primary-hover: #36a1e2;
+  --jn-color-primary-soft: rgba(74, 169, 239, 0.2);
+  --jn-color-secondary: #8b82e8;
+  --jn-color-accent: #b5a3ff;
+  --jn-color-success: #55d3ac;
+  --jn-color-warning: #f2b967;
+  --jn-color-danger: #ff7d91;
+  --jn-color-success-soft: rgba(85, 211, 172, 0.2);
+  --jn-color-warning-soft: rgba(242, 185, 103, 0.2);
+  --jn-color-danger-soft: rgba(255, 125, 145, 0.2);
+  --jn-color-surface-overlay: rgba(255, 255, 255, 0.1);
+  --jn-color-surface-overlay-strong: rgba(255, 255, 255, 0.18);
+  --jn-color-overlay-subtle: rgba(0, 0, 0, 0.16);
+  --jn-color-overlay-light: rgba(0, 0, 0, 0.24);
+  --jn-color-overlay-soft: rgba(0, 0, 0, 0.35);
+  --jn-color-overlay-medium: rgba(0, 0, 0, 0.45);
+  --jn-color-overlay: rgba(0, 0, 0, 0.6);
+  --jn-color-overlay-strong: rgba(0, 0, 0, 0.72);
+  --jn-color-overlay-heavy: rgba(0, 0, 0, 0.82);
+  --jn-color-overlay-opaque: rgba(0, 0, 0, 0.95);
+  --jn-color-transparent: transparent;
+  --jn-shadow-card: 0 26rpx 64rpx rgba(0, 6, 28, 0.48);
+  --jn-shadow-button: 0 14rpx 30rpx rgba(56, 174, 244, 0.34);
+  --jn-radius-card: 44rpx;
+  --jn-radius-control: 999rpx;
+  --jn-card-backdrop-filter: blur(24px) saturate(1.2);
+  --jn-bg-image: url('./deep-ocean.png');
+  --jn-preview-image: url('./deep-ocean-preview.png');
+  --jn-surface-image: radial-gradient(circle at 88% 12%, rgba(96, 174, 255, 0.2), transparent 48%), linear-gradient(145deg, rgba(30, 69, 132, 0.28), rgba(4, 19, 52, 0.12));
+}
+
+.jn-theme-amber-night {
+  --jn-theme-name: 'amber-night';
+  --jn-color-page-bg: #25100e;
+  --jn-color-surface: rgba(67, 29, 22, 0.84);
+  --jn-color-surface-solid: #48231b;
+  --jn-color-surface-muted: rgba(92, 43, 27, 0.82);
+  --jn-color-text-primary: #fff5e8;
+  --jn-color-text-secondary: #dfbca0;
+  --jn-color-text-tertiary: #ad806a;
+  --jn-color-text-inverse: #32150f;
+  --jn-color-border: rgba(242, 174, 91, 0.22);
+  --jn-color-divider: rgba(242, 174, 91, 0.14);
+  --jn-color-primary: #e99a43;
+  --jn-color-primary-hover: #d9812c;
+  --jn-color-primary-soft: rgba(233, 154, 67, 0.2);
+  --jn-color-secondary: #b9603e;
+  --jn-color-accent: #f4c56d;
+  --jn-color-success: #7bc08e;
+  --jn-color-warning: #f4bd55;
+  --jn-color-danger: #e8786e;
+  --jn-color-success-soft: rgba(123, 192, 142, 0.2);
+  --jn-color-warning-soft: rgba(244, 189, 85, 0.2);
+  --jn-color-danger-soft: rgba(232, 120, 110, 0.2);
+  --jn-color-surface-overlay: rgba(255, 245, 232, 0.1);
+  --jn-color-surface-overlay-strong: rgba(255, 245, 232, 0.18);
+  --jn-color-overlay-subtle: rgba(0, 0, 0, 0.16);
+  --jn-color-overlay-light: rgba(0, 0, 0, 0.24);
+  --jn-color-overlay-soft: rgba(0, 0, 0, 0.35);
+  --jn-color-overlay-medium: rgba(0, 0, 0, 0.45);
+  --jn-color-overlay: rgba(0, 0, 0, 0.6);
+  --jn-color-overlay-strong: rgba(0, 0, 0, 0.72);
+  --jn-color-overlay-heavy: rgba(0, 0, 0, 0.82);
+  --jn-color-overlay-opaque: rgba(0, 0, 0, 0.95);
+  --jn-color-transparent: transparent;
+  --jn-shadow-card: 10rpx 12rpx 0 rgba(28, 8, 5, 0.46);
+  --jn-shadow-button: 6rpx 8rpx 0 rgba(233, 154, 67, 0.36);
+  --jn-radius-card: 12rpx;
+  --jn-radius-control: 8rpx;
+  --jn-card-backdrop-filter: none;
+  --jn-bg-image: url('./amber-night.png');
+  --jn-preview-image: url('./amber-night-preview.png');
+  --jn-surface-image: radial-gradient(circle at 90% 4%, rgba(244, 190, 104, 0.15), transparent 38%), linear-gradient(145deg, rgba(122, 55, 29, 0.2), rgba(45, 15, 11, 0.1));
+}
+
+.jn-theme-dusk-blush {
+  --jn-theme-name: 'dusk-blush';
+  --jn-color-page-bg: #fff3f1;
+  --jn-color-surface: rgba(255, 255, 255, 0.76);
+  --jn-color-surface-solid: #ffffff;
+  --jn-color-surface-muted: rgba(255, 229, 229, 0.82);
+  --jn-color-text-primary: #4b2939;
+  --jn-color-text-secondary: #8e6574;
+  --jn-color-text-tertiary: #b995a1;
+  --jn-color-text-inverse: #ffffff;
+  --jn-color-border: rgba(188, 111, 137, 0.22);
+  --jn-color-divider: rgba(188, 111, 137, 0.14);
+  --jn-color-primary: #c86689;
+  --jn-color-primary-hover: #b55276;
+  --jn-color-primary-soft: #f6d6df;
+  --jn-color-secondary: #d991a8;
+  --jn-color-accent: #e5b463;
+  --jn-color-success: #78ae86;
+  --jn-color-warning: #dba14e;
+  --jn-color-danger: #d66d78;
+  --jn-color-success-soft: rgba(120, 174, 134, 0.16);
+  --jn-color-warning-soft: rgba(219, 161, 78, 0.16);
+  --jn-color-danger-soft: rgba(214, 109, 120, 0.16);
+  --jn-color-surface-overlay: rgba(255, 255, 255, 0.5);
+  --jn-color-surface-overlay-strong: rgba(255, 255, 255, 0.8);
+  --jn-color-overlay-subtle: rgba(75, 41, 57, 0.06);
+  --jn-color-overlay-light: rgba(75, 41, 57, 0.12);
+  --jn-color-overlay-soft: rgba(75, 41, 57, 0.2);
+  --jn-color-overlay-medium: rgba(75, 41, 57, 0.3);
+  --jn-color-overlay: rgba(75, 41, 57, 0.4);
+  --jn-color-overlay-strong: rgba(75, 41, 57, 0.5);
+  --jn-color-overlay-heavy: rgba(75, 41, 57, 0.6);
+  --jn-color-overlay-opaque: rgba(75, 41, 57, 0.9);
+  --jn-color-transparent: transparent;
+  --jn-shadow-card: 12rpx 16rpx 0 rgba(165, 93, 116, 0.18);
+  --jn-shadow-button: 8rpx 10rpx 0 rgba(200, 102, 137, 0.3);
+  --jn-radius-card: 48rpx 18rpx 44rpx 22rpx;
+  --jn-radius-control: 999rpx;
+  --jn-card-backdrop-filter: blur(16px) saturate(1.06);
+  --jn-bg-image: url('./dusk-blush.png');
+  --jn-preview-image: url('./dusk-blush-preview.png');
+  --jn-surface-image: radial-gradient(circle at 90% 8%, rgba(241, 181, 201, 0.28), transparent 42%), linear-gradient(145deg, rgba(255, 255, 255, 0.22), rgba(210, 112, 148, 0.08));
+}
+
+.jn-theme-obsidian-gold {
+  --jn-theme-name: 'obsidian-gold';
+  --jn-color-page-bg: #090a0c;
+  --jn-color-surface: rgba(27, 28, 31, 0.86);
+  --jn-color-surface-solid: #1b1c1f;
+  --jn-color-surface-muted: rgba(43, 43, 45, 0.84);
+  --jn-color-text-primary: #f4f0e8;
+  --jn-color-text-secondary: #b8b1a5;
+  --jn-color-text-tertiary: #77736c;
+  --jn-color-text-inverse: #17130e;
+  --jn-color-border: rgba(222, 177, 99, 0.22);
+  --jn-color-divider: rgba(222, 177, 99, 0.14);
+  --jn-color-primary: #d9a653;
+  --jn-color-primary-hover: #c28c3b;
+  --jn-color-primary-soft: rgba(217, 166, 83, 0.2);
+  --jn-color-secondary: #756c60;
+  --jn-color-accent: #f1c979;
+  --jn-color-success: #75b58b;
+  --jn-color-warning: #e4ac53;
+  --jn-color-danger: #d8756d;
+  --jn-color-success-soft: rgba(117, 181, 139, 0.2);
+  --jn-color-warning-soft: rgba(228, 172, 83, 0.2);
+  --jn-color-danger-soft: rgba(216, 117, 109, 0.2);
+  --jn-color-surface-overlay: rgba(244, 240, 232, 0.1);
+  --jn-color-surface-overlay-strong: rgba(244, 240, 232, 0.18);
+  --jn-color-overlay-subtle: rgba(0, 0, 0, 0.2);
+  --jn-color-overlay-light: rgba(0, 0, 0, 0.3);
+  --jn-color-overlay-soft: rgba(0, 0, 0, 0.4);
+  --jn-color-overlay-medium: rgba(0, 0, 0, 0.5);
+  --jn-color-overlay: rgba(0, 0, 0, 0.65);
+  --jn-color-overlay-strong: rgba(0, 0, 0, 0.75);
+  --jn-color-overlay-heavy: rgba(0, 0, 0, 0.85);
+  --jn-color-overlay-opaque: rgba(0, 0, 0, 0.95);
+  --jn-color-transparent: transparent;
+  --jn-shadow-card: 8rpx 8rpx 0 rgba(217, 166, 83, 0.42);
+  --jn-shadow-button: 5rpx 5rpx 0 rgba(241, 201, 121, 0.46);
+  --jn-radius-card: 6rpx;
+  --jn-radius-control: 6rpx;
+  --jn-card-backdrop-filter: none;
+  --jn-bg-image: url('./obsidian-gold.png');
+  --jn-preview-image: url('./obsidian-gold-preview.png');
+  --jn-surface-image: linear-gradient(115deg, rgba(217, 166, 83, 0.12) 0 1rpx, transparent 1rpx 22%), linear-gradient(145deg, rgba(56, 51, 42, 0.28), rgba(11, 12, 15, 0.08));
+}
+
+/* 轻主题：仅替换语义配色，保留标准圆角、阴影和页面布局。 */
+.jn-theme-jade-paper {
+  --jn-theme-name: 'jade-paper';
+  --jn-color-page-bg: #f6fbf7;
+  --jn-color-surface: rgba(255, 255, 255, 0.8);
+  --jn-color-surface-solid: #ffffff;
+  --jn-color-surface-muted: #e9f6ee;
+  --jn-color-text-primary: #183d31;
+  --jn-color-text-secondary: #5b7f70;
+  --jn-color-text-tertiary: #93ab9f;
+  --jn-color-text-inverse: #ffffff;
+  --jn-color-border: rgba(51, 122, 93, 0.22);
+  --jn-color-divider: rgba(51, 122, 93, 0.12);
+  --jn-color-primary: #2e9c74;
+  --jn-color-primary-hover: #237d5c;
+  --jn-color-primary-soft: #d9f1e5;
+  --jn-color-secondary: #74bea2;
+  --jn-color-accent: #e2ad55;
+  --jn-color-success: #3eaa68;
+  --jn-color-warning: #d69b38;
+  --jn-color-danger: #d96568;
+  --jn-color-success-soft: rgba(62, 170, 104, 0.16);
+  --jn-color-warning-soft: rgba(214, 155, 56, 0.16);
+  --jn-color-danger-soft: rgba(217, 101, 104, 0.16);
+  --jn-color-surface-overlay: rgba(255, 255, 255, 0.5);
+  --jn-color-surface-overlay-strong: rgba(255, 255, 255, 0.8);
+  --jn-color-overlay-subtle: rgba(24, 61, 49, 0.06);
+  --jn-color-overlay-light: rgba(24, 61, 49, 0.12);
+  --jn-color-overlay-soft: rgba(24, 61, 49, 0.2);
+  --jn-color-overlay-medium: rgba(24, 61, 49, 0.3);
+  --jn-color-overlay: rgba(24, 61, 49, 0.4);
+  --jn-color-overlay-strong: rgba(24, 61, 49, 0.5);
+  --jn-color-overlay-heavy: rgba(24, 61, 49, 0.6);
+  --jn-color-overlay-opaque: rgba(24, 61, 49, 0.9);
+  --jn-color-transparent: transparent;
+  --jn-shadow-card: 0 12rpx 36rpx rgba(46, 156, 116, 0.12);
+  --jn-shadow-button: 0 10rpx 22rpx rgba(46, 156, 116, 0.24);
+  --jn-radius-card: 28rpx;
+  --jn-radius-control: 16rpx;
+  --jn-bg-image: none;
+  --jn-preview-image: linear-gradient(135deg, #effaf3 0%, #bce8d4 100%);
+}
+
+.jn-theme-violet-dawn {
+  --jn-theme-name: 'violet-dawn';
+  --jn-color-page-bg: #faf8ff;
+  --jn-color-surface: rgba(255, 255, 255, 0.82);
+  --jn-color-surface-solid: #ffffff;
+  --jn-color-surface-muted: #f0ecff;
+  --jn-color-text-primary: #332653;
+  --jn-color-text-secondary: #71648f;
+  --jn-color-text-tertiary: #a198b8;
+  --jn-color-text-inverse: #ffffff;
+  --jn-color-border: rgba(117, 91, 179, 0.22);
+  --jn-color-divider: rgba(117, 91, 179, 0.12);
+  --jn-color-primary: #7656c7;
+  --jn-color-primary-hover: #5f43a8;
+  --jn-color-primary-soft: #e8dfff;
+  --jn-color-secondary: #aa94df;
+  --jn-color-accent: #d69a58;
+  --jn-color-success: #5ba47d;
+  --jn-color-warning: #d6943e;
+  --jn-color-danger: #d96983;
+  --jn-color-success-soft: rgba(91, 164, 125, 0.16);
+  --jn-color-warning-soft: rgba(214, 148, 62, 0.16);
+  --jn-color-danger-soft: rgba(217, 105, 131, 0.16);
+  --jn-color-surface-overlay: rgba(255, 255, 255, 0.5);
+  --jn-color-surface-overlay-strong: rgba(255, 255, 255, 0.8);
+  --jn-color-overlay-subtle: rgba(51, 38, 83, 0.06);
+  --jn-color-overlay-light: rgba(51, 38, 83, 0.12);
+  --jn-color-overlay-soft: rgba(51, 38, 83, 0.2);
+  --jn-color-overlay-medium: rgba(51, 38, 83, 0.3);
+  --jn-color-overlay: rgba(51, 38, 83, 0.4);
+  --jn-color-overlay-strong: rgba(51, 38, 83, 0.5);
+  --jn-color-overlay-heavy: rgba(51, 38, 83, 0.6);
+  --jn-color-overlay-opaque: rgba(51, 38, 83, 0.9);
+  --jn-color-transparent: transparent;
+  --jn-shadow-card: 0 12rpx 36rpx rgba(118, 86, 199, 0.12);
+  --jn-shadow-button: 0 10rpx 22rpx rgba(118, 86, 199, 0.24);
+  --jn-radius-card: 28rpx;
+  --jn-radius-control: 16rpx;
+  --jn-bg-image: none;
+  --jn-preview-image: linear-gradient(135deg, #f5f1ff 0%, #d9caf8 100%);
+}
+
+/* 扩展轻主题：保留统一的信息层级，只覆盖更完整的色相选择。 */
+.jn-theme-azure-breeze,
+.jn-theme-citrus-cream,
+.jn-theme-rosewater,
+.jn-theme-coral-sand,
+.jn-theme-slate-paper {
+  --jn-color-surface: rgba(255, 255, 255, 0.82);
+  --jn-color-surface-solid: #ffffff;
+  --jn-color-surface-overlay: rgba(255, 255, 255, 0.5);
+  --jn-color-surface-overlay-strong: rgba(255, 255, 255, 0.8);
+  --jn-color-overlay-subtle: rgba(30, 40, 50, 0.06);
+  --jn-color-overlay-light: rgba(30, 40, 50, 0.12);
+  --jn-color-overlay-soft: rgba(30, 40, 50, 0.2);
+  --jn-color-overlay-medium: rgba(30, 40, 50, 0.3);
+  --jn-color-overlay: rgba(30, 40, 50, 0.4);
+  --jn-color-overlay-strong: rgba(30, 40, 50, 0.5);
+  --jn-color-overlay-heavy: rgba(30, 40, 50, 0.6);
+  --jn-color-overlay-opaque: rgba(30, 40, 50, 0.9);
+  --jn-color-transparent: transparent;
+  --jn-radius-card: 28rpx;
+  --jn-radius-control: 16rpx;
+  --jn-bg-image: none;
+}
+
+.jn-theme-azure-breeze {
+  --jn-theme-name: 'azure-breeze';
+  --jn-color-page-bg: #f5faff;
+  --jn-color-surface-muted: #e6f2ff;
+  --jn-color-text-primary: #173756;
+  --jn-color-text-secondary: #5f7e9a;
+  --jn-color-text-tertiary: #92abc1;
+  --jn-color-text-inverse: #ffffff;
+  --jn-color-border: rgba(59, 145, 223, 0.22);
+  --jn-color-divider: rgba(59, 145, 223, 0.12);
+  --jn-color-primary: #3b91df;
+  --jn-color-primary-hover: #2878c4;
+  --jn-color-primary-soft: #d7ebff;
+  --jn-color-secondary: #6ab7ed;
+  --jn-color-accent: #d5a554;
+  --jn-color-success: #49a478;
+  --jn-color-warning: #d6973e;
+  --jn-color-danger: #d96a79;
+  --jn-color-success-soft: rgba(73, 164, 120, 0.16);
+  --jn-color-warning-soft: rgba(214, 151, 62, 0.16);
+  --jn-color-danger-soft: rgba(217, 106, 121, 0.16);
+  --jn-shadow-card: 0 12rpx 36rpx rgba(59, 145, 223, 0.12);
+  --jn-shadow-button: 0 10rpx 22rpx rgba(59, 145, 223, 0.24);
+  --jn-preview-image: linear-gradient(135deg, #f2f9ff 0%, #b9dbf8 100%);
+}
+
+.jn-theme-citrus-cream {
+  --jn-theme-name: 'citrus-cream';
+  --jn-color-page-bg: #fffaf0;
+  --jn-color-surface-muted: #fff0cf;
+  --jn-color-text-primary: #4a3516;
+  --jn-color-text-secondary: #806944;
+  --jn-color-text-tertiary: #b09a78;
+  --jn-color-text-inverse: #ffffff;
+  --jn-color-border: rgba(213, 154, 39, 0.24);
+  --jn-color-divider: rgba(213, 154, 39, 0.13);
+  --jn-color-primary: #d59a27;
+  --jn-color-primary-hover: #b97d12;
+  --jn-color-primary-soft: #ffe7a8;
+  --jn-color-secondary: #e8bd5d;
+  --jn-color-accent: #e5734a;
+  --jn-color-success: #65a56d;
+  --jn-color-warning: #d99625;
+  --jn-color-danger: #d66862;
+  --jn-color-success-soft: rgba(101, 165, 109, 0.16);
+  --jn-color-warning-soft: rgba(217, 150, 37, 0.16);
+  --jn-color-danger-soft: rgba(214, 104, 98, 0.16);
+  --jn-shadow-card: 0 12rpx 36rpx rgba(202, 148, 46, 0.13);
+  --jn-shadow-button: 0 10rpx 22rpx rgba(213, 154, 39, 0.26);
+  --jn-preview-image: linear-gradient(135deg, #fff8e9 0%, #f6d890 100%);
+}
+
+.jn-theme-rosewater {
+  --jn-theme-name: 'rosewater';
+  --jn-color-page-bg: #fff7fa;
+  --jn-color-surface-muted: #ffe5ee;
+  --jn-color-text-primary: #522f3d;
+  --jn-color-text-secondary: #8d6875;
+  --jn-color-text-tertiary: #b99aa5;
+  --jn-color-text-inverse: #ffffff;
+  --jn-color-border: rgba(215, 97, 138, 0.22);
+  --jn-color-divider: rgba(215, 97, 138, 0.12);
+  --jn-color-primary: #d7618a;
+  --jn-color-primary-hover: #b84970;
+  --jn-color-primary-soft: #ffd9e7;
+  --jn-color-secondary: #e49bb4;
+  --jn-color-accent: #d9a14f;
+  --jn-color-success: #67a67c;
+  --jn-color-warning: #d8963b;
+  --jn-color-danger: #d86472;
+  --jn-color-success-soft: rgba(103, 166, 124, 0.16);
+  --jn-color-warning-soft: rgba(216, 150, 59, 0.16);
+  --jn-color-danger-soft: rgba(216, 100, 114, 0.16);
+  --jn-shadow-card: 0 12rpx 36rpx rgba(215, 97, 138, 0.12);
+  --jn-shadow-button: 0 10rpx 22rpx rgba(215, 97, 138, 0.24);
+  --jn-preview-image: linear-gradient(135deg, #fff4f8 0%, #f7c7db 100%);
+}
+
+.jn-theme-coral-sand {
+  --jn-theme-name: 'coral-sand';
+  --jn-color-page-bg: #fff8f2;
+  --jn-color-surface-muted: #ffe8d8;
+  --jn-color-text-primary: #553626;
+  --jn-color-text-secondary: #8c6a58;
+  --jn-color-text-tertiary: #b39a8d;
+  --jn-color-text-inverse: #ffffff;
+  --jn-color-border: rgba(221, 121, 82, 0.22);
+  --jn-color-divider: rgba(221, 121, 82, 0.12);
+  --jn-color-primary: #dd7952;
+  --jn-color-primary-hover: #bf5c38;
+  --jn-color-primary-soft: #ffd7c2;
+  --jn-color-secondary: #e8a07c;
+  --jn-color-accent: #d2a542;
+  --jn-color-success: #6ba978;
+  --jn-color-warning: #d88c35;
+  --jn-color-danger: #d56262;
+  --jn-color-success-soft: rgba(107, 169, 120, 0.16);
+  --jn-color-warning-soft: rgba(216, 140, 53, 0.16);
+  --jn-color-danger-soft: rgba(213, 98, 98, 0.16);
+  --jn-shadow-card: 0 12rpx 36rpx rgba(221, 121, 82, 0.12);
+  --jn-shadow-button: 0 10rpx 22rpx rgba(221, 121, 82, 0.24);
+  --jn-preview-image: linear-gradient(135deg, #fff6ef 0%, #f4c3a5 100%);
+}
+
+.jn-theme-slate-paper {
+  --jn-theme-name: 'slate-paper';
+  --jn-color-page-bg: #f7f9fc;
+  --jn-color-surface-muted: #e9eef5;
+  --jn-color-text-primary: #263343;
+  --jn-color-text-secondary: #637386;
+  --jn-color-text-tertiary: #98a5b4;
+  --jn-color-text-inverse: #ffffff;
+  --jn-color-border: rgba(83, 117, 156, 0.22);
+  --jn-color-divider: rgba(83, 117, 156, 0.12);
+  --jn-color-primary: #53759c;
+  --jn-color-primary-hover: #405f83;
+  --jn-color-primary-soft: #d9e5f1;
+  --jn-color-secondary: #8ea6bd;
+  --jn-color-accent: #b58b4b;
+  --jn-color-success: #5f9b77;
+  --jn-color-warning: #c88b37;
+  --jn-color-danger: #c86168;
+  --jn-color-success-soft: rgba(95, 155, 119, 0.16);
+  --jn-color-warning-soft: rgba(200, 139, 55, 0.16);
+  --jn-color-danger-soft: rgba(200, 97, 104, 0.16);
+  --jn-shadow-card: 0 12rpx 36rpx rgba(83, 117, 156, 0.12);
+  --jn-shadow-button: 0 10rpx 22rpx rgba(83, 117, 156, 0.24);
+  --jn-preview-image: linear-gradient(135deg, #f8fafc 0%, #c9d5e3 100%);
+}
+
+/* 黑白轻主题：只改变黑白灰层级，保留标准布局与纯色面板。 */
+.jn-theme-pure-white {
+  --jn-theme-name: 'pure-white';
+  --jn-color-page-bg: #f6f8fa;
+  --jn-color-surface: rgba(255, 255, 255, 0.96);
+  --jn-color-surface-solid: #ffffff;
+  --jn-color-surface-muted: #eef2f5;
+  --jn-color-surface-overlay: rgba(255, 255, 255, 0.78);
+  --jn-color-surface-overlay-strong: rgba(255, 255, 255, 0.96);
+  --jn-color-text-primary: #0b0f14;
+  --jn-color-text-secondary: #566575;
+  --jn-color-text-tertiary: #8998a6;
+  --jn-color-text-inverse: #ffffff;
+  --jn-color-border: rgba(39, 57, 73, 0.18);
+  --jn-color-divider: rgba(39, 57, 73, 0.1);
+  --jn-color-primary: #0b0f14;
+  --jn-color-primary-hover: #1a2632;
+  --jn-color-primary-soft: #e4ebf0;
+  --jn-color-secondary: #4f7699;
+  --jn-color-accent: #8baac1;
+  --jn-color-success: #5d897b;
+  --jn-color-warning: #a98251;
+  --jn-color-danger: #a66a72;
+  --jn-color-success-soft: rgba(93, 137, 123, 0.12);
+  --jn-color-warning-soft: rgba(169, 130, 81, 0.12);
+  --jn-color-danger-soft: rgba(166, 106, 114, 0.12);
+  --jn-color-overlay-subtle: rgba(0, 0, 0, 0.05);
+  --jn-color-overlay-light: rgba(0, 0, 0, 0.1);
+  --jn-color-overlay-soft: rgba(0, 0, 0, 0.18);
+  --jn-color-overlay-medium: rgba(0, 0, 0, 0.28);
+  --jn-color-overlay: rgba(0, 0, 0, 0.42);
+  --jn-color-overlay-strong: rgba(0, 0, 0, 0.56);
+  --jn-color-overlay-heavy: rgba(0, 0, 0, 0.7);
+  --jn-color-overlay-opaque: rgba(0, 0, 0, 0.9);
+  --jn-color-transparent: transparent;
+  --jn-shadow-card: 0 8rpx 22rpx rgba(22, 42, 58, 0.07);
+  --jn-shadow-button: 0 6rpx 14rpx rgba(11, 15, 20, 0.18);
+  --jn-radius-card: 10rpx;
+  --jn-radius-control: 8rpx;
+  --jn-bg-image: none;
+  --jn-preview-image: linear-gradient(120deg, transparent 0 47%, rgba(79, 118, 153, 0.14) 47% 47.5%, transparent 47.5% 100%), linear-gradient(135deg, #ffffff 0%, #eef3f6 62%, #dce8ee 100%);
+}
+
+.jn-theme-midnight-mono {
+  --jn-theme-name: 'midnight-mono';
+  --jn-color-page-bg: #101617;
+  --jn-color-surface: rgba(23, 31, 32, 0.94);
+  --jn-color-surface-solid: #171f20;
+  --jn-color-surface-muted: #283638;
+  --jn-color-surface-overlay: rgba(255, 255, 255, 0.06);
+  --jn-color-surface-overlay-strong: rgba(255, 255, 255, 0.12);
+  --jn-color-text-primary: #edf4f2;
+  --jn-color-text-secondary: #b4c3c1;
+  --jn-color-text-tertiary: #809391;
+  --jn-color-text-inverse: #122020;
+  --jn-color-border: rgba(166, 198, 193, 0.22);
+  --jn-color-divider: rgba(166, 198, 193, 0.11);
+  --jn-color-primary: #d9ebe6;
+  --jn-color-primary-hover: #b9d5cd;
+  --jn-color-primary-soft: #2d4142;
+  --jn-color-secondary: #9dbcb9;
+  --jn-color-accent: #d0ae79;
+  --jn-color-success: #9cc7aa;
+  --jn-color-warning: #d6ad75;
+  --jn-color-danger: #d2949b;
+  --jn-color-success-soft: rgba(156, 199, 170, 0.14);
+  --jn-color-warning-soft: rgba(214, 173, 117, 0.14);
+  --jn-color-danger-soft: rgba(210, 148, 155, 0.14);
+  --jn-color-overlay-subtle: rgba(0, 0, 0, 0.12);
+  --jn-color-overlay-light: rgba(0, 0, 0, 0.22);
+  --jn-color-overlay-soft: rgba(0, 0, 0, 0.34);
+  --jn-color-overlay-medium: rgba(0, 0, 0, 0.46);
+  --jn-color-overlay: rgba(0, 0, 0, 0.62);
+  --jn-color-overlay-strong: rgba(0, 0, 0, 0.74);
+  --jn-color-overlay-heavy: rgba(0, 0, 0, 0.84);
+  --jn-color-overlay-opaque: rgba(0, 0, 0, 0.96);
+  --jn-color-transparent: transparent;
+  --jn-shadow-card: 0 12rpx 32rpx rgba(0, 8, 8, 0.42);
+  --jn-shadow-button: 0 8rpx 18rpx rgba(173, 213, 205, 0.12);
+  --jn-radius-card: 20rpx;
+  --jn-radius-control: 12rpx;
+  --jn-bg-image: none;
+  --jn-preview-image: linear-gradient(135deg, #101617 0%, #294041 56%, #5d4e3d 100%);
+}
+
+/* 重主题：同时重塑背景、表面质感、圆角和阴影。 */
+.jn-theme-aurora-glass {
+  --jn-theme-name: 'aurora-glass';
+  --jn-color-page-bg: #061a28;
+  --jn-color-surface: rgba(10, 37, 56, 0.66);
+  --jn-color-surface-solid: #0d3148;
+  --jn-color-surface-muted: rgba(41, 89, 107, 0.5);
+  --jn-color-text-primary: #e9fbff;
+  --jn-color-text-secondary: #aed6df;
+  --jn-color-text-tertiary: #78a7b2;
+  --jn-color-text-inverse: #07202c;
+  --jn-color-border: rgba(148, 240, 220, 0.34);
+  --jn-color-divider: rgba(148, 240, 220, 0.18);
+  --jn-color-primary: #73e1c7;
+  --jn-color-primary-hover: #49bda8;
+  --jn-color-primary-soft: rgba(115, 225, 199, 0.2);
+  --jn-color-secondary: #7bc5ec;
+  --jn-color-accent: #d9b3ff;
+  --jn-color-success: #72dfa5;
+  --jn-color-warning: #f5c46d;
+  --jn-color-danger: #fb8eaa;
+  --jn-color-success-soft: rgba(114, 223, 165, 0.2);
+  --jn-color-warning-soft: rgba(245, 196, 109, 0.2);
+  --jn-color-danger-soft: rgba(251, 142, 170, 0.2);
+  --jn-color-surface-overlay: rgba(225, 255, 252, 0.12);
+  --jn-color-surface-overlay-strong: rgba(225, 255, 252, 0.22);
+  --jn-color-overlay-subtle: rgba(0, 8, 15, 0.16);
+  --jn-color-overlay-light: rgba(0, 8, 15, 0.24);
+  --jn-color-overlay-soft: rgba(0, 8, 15, 0.35);
+  --jn-color-overlay-medium: rgba(0, 8, 15, 0.45);
+  --jn-color-overlay: rgba(0, 8, 15, 0.6);
+  --jn-color-overlay-strong: rgba(0, 8, 15, 0.72);
+  --jn-color-overlay-heavy: rgba(0, 8, 15, 0.82);
+  --jn-color-overlay-opaque: rgba(0, 8, 15, 0.95);
+  --jn-color-transparent: transparent;
+  --jn-shadow-card: 0 24rpx 72rpx rgba(0, 10, 22, 0.46);
+  --jn-shadow-button: 0 14rpx 30rpx rgba(115, 225, 199, 0.28);
+  --jn-radius-card: 44rpx;
+  --jn-radius-control: 999rpx;
+  --jn-bg-image: radial-gradient(circle at 12% 8%, rgba(93, 239, 209, 0.28), transparent 30%), radial-gradient(circle at 88% 24%, rgba(135, 144, 255, 0.26), transparent 34%), linear-gradient(145deg, #051a29 0%, #0c3951 48%, #28184c 100%);
+  --jn-preview-image: radial-gradient(circle at 20% 18%, #7ee9cf 0%, transparent 28%), radial-gradient(circle at 76% 30%, #8e94ff 0%, transparent 30%), linear-gradient(145deg, #061a28 0%, #203d61 55%, #33205e 100%);
+  --jn-surface-image: radial-gradient(circle at 88% 10%, rgba(126, 233, 207, 0.18), transparent 46%), linear-gradient(145deg, rgba(100, 148, 255, 0.12), rgba(30, 17, 77, 0.08));
+}
+
+.jn-theme-terminal-grid {
+  --jn-theme-name: 'terminal-grid';
+  --jn-color-page-bg: #07100c;
+  --jn-color-surface: rgba(7, 20, 13, 0.94);
+  --jn-color-surface-solid: #0a1710;
+  --jn-color-surface-muted: #10271a;
+  --jn-color-text-primary: #d4ffd9;
+  --jn-color-text-secondary: #92c79c;
+  --jn-color-text-tertiary: #568460;
+  --jn-color-text-inverse: #061009;
+  --jn-color-border: rgba(119, 255, 142, 0.46);
+  --jn-color-divider: rgba(119, 255, 142, 0.2);
+  --jn-color-primary: #75ff8e;
+  --jn-color-primary-hover: #42ca64;
+  --jn-color-primary-soft: rgba(117, 255, 142, 0.16);
+  --jn-color-secondary: #38d9ff;
+  --jn-color-accent: #f6e66b;
+  --jn-color-success: #75ff8e;
+  --jn-color-warning: #f5d763;
+  --jn-color-danger: #ff7b86;
+  --jn-color-success-soft: rgba(117, 255, 142, 0.16);
+  --jn-color-warning-soft: rgba(245, 215, 99, 0.16);
+  --jn-color-danger-soft: rgba(255, 123, 134, 0.16);
+  --jn-color-surface-overlay: rgba(212, 255, 217, 0.06);
+  --jn-color-surface-overlay-strong: rgba(212, 255, 217, 0.12);
+  --jn-color-overlay-subtle: rgba(0, 0, 0, 0.2);
+  --jn-color-overlay-light: rgba(0, 0, 0, 0.3);
+  --jn-color-overlay-soft: rgba(0, 0, 0, 0.4);
+  --jn-color-overlay-medium: rgba(0, 0, 0, 0.5);
+  --jn-color-overlay: rgba(0, 0, 0, 0.65);
+  --jn-color-overlay-strong: rgba(0, 0, 0, 0.75);
+  --jn-color-overlay-heavy: rgba(0, 0, 0, 0.85);
+  --jn-color-overlay-opaque: rgba(0, 0, 0, 0.95);
+  --jn-color-transparent: transparent;
+  --jn-shadow-card: 10rpx 10rpx 0 rgba(117, 255, 142, 0.24);
+  --jn-shadow-button: 6rpx 6rpx 0 rgba(117, 255, 142, 0.52);
+  --jn-radius-card: 0;
+  --jn-radius-control: 0;
+  --jn-bg-image: linear-gradient(rgba(117, 255, 142, 0.07) 1rpx, transparent 1rpx), linear-gradient(90deg, rgba(117, 255, 142, 0.07) 1rpx, transparent 1rpx), linear-gradient(135deg, #07100c 0%, #0d2315 100%);
+  --jn-preview-image: linear-gradient(rgba(117, 255, 142, 0.12) 1rpx, transparent 1rpx), linear-gradient(90deg, rgba(117, 255, 142, 0.12) 1rpx, transparent 1rpx), linear-gradient(135deg, #07100c 0%, #174022 100%);
+  --jn-bg-size: 32rpx 32rpx, 32rpx 32rpx, cover;
+  --jn-surface-image: linear-gradient(rgba(117, 255, 142, 0.08) 1rpx, transparent 1rpx), linear-gradient(90deg, rgba(117, 255, 142, 0.08) 1rpx, transparent 1rpx);
+}
+
+.jn-theme-candy-pop {
+  --jn-theme-name: 'candy-pop';
+  --jn-color-page-bg: #fff3fc;
+  --jn-color-surface: rgba(255, 255, 255, 0.78);
+  --jn-color-surface-solid: #ffffff;
+  --jn-color-surface-muted: #ffe1f2;
+  --jn-color-text-primary: #522343;
+  --jn-color-text-secondary: #94677e;
+  --jn-color-text-tertiary: #bd94a8;
+  --jn-color-text-inverse: #ffffff;
+  --jn-color-border: rgba(238, 94, 166, 0.38);
+  --jn-color-divider: rgba(238, 94, 166, 0.18);
+  --jn-color-primary: #ef5da8;
+  --jn-color-primary-hover: #cf3e88;
+  --jn-color-primary-soft: #ffd1e8;
+  --jn-color-secondary: #7797ff;
+  --jn-color-accent: #ffc95c;
+  --jn-color-success: #4fcf9c;
+  --jn-color-warning: #f5b84d;
+  --jn-color-danger: #f06c7f;
+  --jn-color-success-soft: rgba(79, 207, 156, 0.18);
+  --jn-color-warning-soft: rgba(245, 184, 77, 0.18);
+  --jn-color-danger-soft: rgba(240, 108, 127, 0.18);
+  --jn-color-surface-overlay: rgba(255, 255, 255, 0.5);
+  --jn-color-surface-overlay-strong: rgba(255, 255, 255, 0.8);
+  --jn-color-overlay-subtle: rgba(82, 35, 67, 0.06);
+  --jn-color-overlay-light: rgba(82, 35, 67, 0.12);
+  --jn-color-overlay-soft: rgba(82, 35, 67, 0.2);
+  --jn-color-overlay-medium: rgba(82, 35, 67, 0.3);
+  --jn-color-overlay: rgba(82, 35, 67, 0.4);
+  --jn-color-overlay-strong: rgba(82, 35, 67, 0.5);
+  --jn-color-overlay-heavy: rgba(82, 35, 67, 0.6);
+  --jn-color-overlay-opaque: rgba(82, 35, 67, 0.9);
+  --jn-color-transparent: transparent;
+  --jn-shadow-card: 12rpx 16rpx 0 rgba(239, 93, 168, 0.22);
+  --jn-shadow-button: 8rpx 10rpx 0 rgba(119, 151, 255, 0.32);
+  --jn-radius-card: 48rpx 18rpx 44rpx 22rpx;
+  --jn-radius-control: 999rpx;
+  --jn-bg-image: radial-gradient(circle at 12% 12%, rgba(255, 202, 91, 0.48), transparent 19%), radial-gradient(circle at 88% 18%, rgba(119, 151, 255, 0.32), transparent 22%), linear-gradient(160deg, #fff5fc 0%, #ffd9ee 54%, #dce5ff 100%);
+  --jn-preview-image: radial-gradient(circle at 18% 18%, #ffd16c 0%, transparent 22%), radial-gradient(circle at 78% 22%, #91a8ff 0%, transparent 25%), linear-gradient(150deg, #fff5fc 0%, #ffbfe1 52%, #cbd8ff 100%);
+  --jn-surface-image: radial-gradient(circle at 88% 8%, rgba(145, 168, 255, 0.24), transparent 42%), radial-gradient(circle at 8% 96%, rgba(255, 202, 91, 0.24), transparent 40%);
+}
+
+/* 古风重主题：以纸张、矿物颜料与传统器物的形制建立视觉差异。 */
+.jn-theme-ink-landscape,
+.jn-theme-vermilion-palace,
+.jn-theme-jade-scroll {
+  --jn-color-transparent: transparent;
+  --jn-color-surface-overlay: rgba(255, 255, 255, 0.12);
+  --jn-color-surface-overlay-strong: rgba(255, 255, 255, 0.22);
+  --jn-color-overlay-subtle: rgba(12, 24, 22, 0.08);
+  --jn-color-overlay-light: rgba(12, 24, 22, 0.15);
+  --jn-color-overlay-soft: rgba(12, 24, 22, 0.24);
+  --jn-color-overlay-medium: rgba(12, 24, 22, 0.36);
+  --jn-color-overlay: rgba(12, 24, 22, 0.5);
+  --jn-color-overlay-strong: rgba(12, 24, 22, 0.64);
+  --jn-color-overlay-heavy: rgba(12, 24, 22, 0.76);
+  --jn-color-overlay-opaque: rgba(12, 24, 22, 0.92);
+}
+
+.jn-theme-ink-landscape {
+  --jn-theme-name: 'ink-landscape';
+  --jn-color-page-bg: #e8ece6;
+  --jn-color-surface: rgba(250, 249, 240, 0.82);
+  --jn-color-surface-solid: #f9f8ef;
+  --jn-color-surface-muted: #dce5dd;
+  --jn-color-text-primary: #233330;
+  --jn-color-text-secondary: #63756e;
+  --jn-color-text-tertiary: #96a59f;
+  --jn-color-text-inverse: #f7f6ee;
+  --jn-color-border: rgba(62, 93, 82, 0.34);
+  --jn-color-divider: rgba(62, 93, 82, 0.18);
+  --jn-color-primary: #4e7b6b;
+  --jn-color-primary-hover: #396152;
+  --jn-color-primary-soft: #d6e5dc;
+  --jn-color-secondary: #778f83;
+  --jn-color-accent: #b78c4b;
+  --jn-color-success: #4d8c62;
+  --jn-color-warning: #c18c38;
+  --jn-color-danger: #ad5d57;
+  --jn-color-success-soft: rgba(77, 140, 98, 0.16);
+  --jn-color-warning-soft: rgba(193, 140, 56, 0.16);
+  --jn-color-danger-soft: rgba(173, 93, 87, 0.16);
+  --jn-shadow-card: 0 18rpx 38rpx rgba(45, 71, 61, 0.18);
+  --jn-shadow-button: 4rpx 6rpx 0 rgba(78, 123, 107, 0.24);
+  --jn-radius-card: 16rpx 48rpx 16rpx 48rpx;
+  --jn-radius-control: 10rpx 22rpx 10rpx 22rpx;
+  --jn-card-backdrop-filter: blur(10px) saturate(0.9);
+  --jn-bg-image: linear-gradient(rgba(243, 241, 232, 0.16), rgba(219, 229, 220, 0.22)), url('./assets/ink-landscape.png');
+  --jn-preview-image: linear-gradient(rgba(243, 241, 232, 0.08), rgba(143, 168, 153, 0.18)), url('./assets/ink-landscape.png');
+  --jn-surface-image: linear-gradient(rgba(249, 248, 239, 0.82), rgba(249, 248, 239, 0.9)), url('./assets/ink-landscape.png');
+}
+
+.jn-theme-vermilion-palace {
+  --jn-theme-name: 'vermilion-palace';
+  --jn-color-page-bg: #230f0d;
+  --jn-color-surface: rgba(71, 28, 22, 0.88);
+  --jn-color-surface-solid: #451d18;
+  --jn-color-surface-muted: #612b20;
+  --jn-color-text-primary: #fff2d4;
+  --jn-color-text-secondary: #dfc094;
+  --jn-color-text-tertiary: #ad875f;
+  --jn-color-text-inverse: #32100b;
+  --jn-color-border: rgba(231, 187, 99, 0.48);
+  --jn-color-divider: rgba(231, 187, 99, 0.22);
+  --jn-color-primary: #dfb05a;
+  --jn-color-primary-hover: #bd873b;
+  --jn-color-primary-soft: rgba(223, 176, 90, 0.22);
+  --jn-color-secondary: #b74e3d;
+  --jn-color-accent: #f2ca75;
+  --jn-color-success: #7eae72;
+  --jn-color-warning: #edb553;
+  --jn-color-danger: #e26a58;
+  --jn-color-success-soft: rgba(126, 174, 114, 0.2);
+  --jn-color-warning-soft: rgba(237, 181, 83, 0.2);
+  --jn-color-danger-soft: rgba(226, 106, 88, 0.2);
+  --jn-shadow-card: 8rpx 10rpx 0 rgba(9, 2, 2, 0.46);
+  --jn-shadow-button: 5rpx 5rpx 0 rgba(242, 202, 117, 0.4);
+  --jn-radius-card: 8rpx;
+  --jn-radius-control: 4rpx;
+  --jn-card-backdrop-filter: none;
+  --jn-bg-image: linear-gradient(rgba(35, 7, 6, 0.12), rgba(35, 7, 6, 0.3)), url('./assets/vermilion-palace.png');
+  --jn-preview-image: linear-gradient(rgba(35, 7, 6, 0.06), rgba(35, 7, 6, 0.24)), url('./assets/vermilion-palace.png');
+  --jn-surface-image: linear-gradient(rgba(69, 29, 24, 0.82), rgba(69, 29, 24, 0.9)), url('./assets/vermilion-palace.png');
+}
+
+.jn-theme-jade-scroll {
+  --jn-theme-name: 'jade-scroll';
+  --jn-color-page-bg: #dce8d9;
+  --jn-color-surface: rgba(243, 242, 224, 0.84);
+  --jn-color-surface-solid: #f2f0dc;
+  --jn-color-surface-muted: #d4e0cd;
+  --jn-color-text-primary: #25483e;
+  --jn-color-text-secondary: #668174;
+  --jn-color-text-tertiary: #98aa9d;
+  --jn-color-text-inverse: #f8f5df;
+  --jn-color-border: rgba(61, 115, 96, 0.34);
+  --jn-color-divider: rgba(61, 115, 96, 0.18);
+  --jn-color-primary: #3e826d;
+  --jn-color-primary-hover: #2c6654;
+  --jn-color-primary-soft: #d1e3d4;
+  --jn-color-secondary: #7ba28b;
+  --jn-color-accent: #bd954a;
+  --jn-color-success: #4d9470;
+  --jn-color-warning: #c4943e;
+  --jn-color-danger: #b76058;
+  --jn-color-success-soft: rgba(77, 148, 112, 0.16);
+  --jn-color-warning-soft: rgba(196, 148, 62, 0.16);
+  --jn-color-danger-soft: rgba(183, 96, 88, 0.16);
+  --jn-shadow-card: 0 16rpx 32rpx rgba(52, 88, 67, 0.18);
+  --jn-shadow-button: 4rpx 5rpx 0 rgba(61, 115, 96, 0.26);
+  --jn-radius-card: 8rpx 34rpx 8rpx 34rpx;
+  --jn-radius-control: 6rpx 18rpx 6rpx 18rpx;
+  --jn-card-backdrop-filter: blur(10px) saturate(0.92);
+  --jn-bg-image: linear-gradient(rgba(241, 238, 217, 0.14), rgba(145, 175, 156, 0.18)), url('./assets/jade-scroll.png');
+  --jn-preview-image: linear-gradient(rgba(241, 238, 217, 0.08), rgba(111, 153, 133, 0.16)), url('./assets/jade-scroll.png');
+  --jn-surface-image: linear-gradient(rgba(242, 240, 220, 0.8), rgba(242, 240, 220, 0.9)), url('./assets/jade-scroll.png');
+}
+
+/* 道教风重主题：黑白宣纸上的太极八卦与云气纹样，贯穿页面与面板。 */
+.jn-theme-bagua-taoist {
+  --jn-theme-name: 'bagua-taoist';
+  --jn-color-transparent: transparent;
+  --jn-color-page-bg: #e8e7e1;
+  --jn-color-surface: rgba(255, 255, 255, 0.84);
+  --jn-color-surface-solid: #ffffff;
+  --jn-color-surface-muted: #e3e3df;
+  --jn-color-text-primary: #151515;
+  --jn-color-text-secondary: #555555;
+  --jn-color-text-tertiary: #929292;
+  --jn-color-text-inverse: #ffffff;
+  --jn-color-border: rgba(20, 20, 20, 0.32);
+  --jn-color-divider: rgba(20, 20, 20, 0.16);
+  --jn-color-primary: #151515;
+  --jn-color-primary-hover: #000000;
+  --jn-color-primary-soft: #dededb;
+  --jn-color-secondary: #4d4d4d;
+  --jn-color-accent: #797979;
+  --jn-color-success: #383838;
+  --jn-color-warning: #5e5e5e;
+  --jn-color-danger: #242424;
+  --jn-color-success-soft: rgba(56, 56, 56, 0.14);
+  --jn-color-warning-soft: rgba(94, 94, 94, 0.14);
+  --jn-color-danger-soft: rgba(36, 36, 36, 0.14);
+  --jn-color-surface-overlay: rgba(255, 255, 255, 0.5);
+  --jn-color-surface-overlay-strong: rgba(255, 255, 255, 0.78);
+  --jn-color-overlay-subtle: rgba(0, 0, 0, 0.06);
+  --jn-color-overlay-light: rgba(0, 0, 0, 0.12);
+  --jn-color-overlay-soft: rgba(0, 0, 0, 0.2);
+  --jn-color-overlay-medium: rgba(0, 0, 0, 0.32);
+  --jn-color-overlay: rgba(0, 0, 0, 0.56);
+  --jn-color-overlay-strong: rgba(0, 0, 0, 0.68);
+  --jn-color-overlay-heavy: rgba(0, 0, 0, 0.78);
+  --jn-color-overlay-opaque: rgba(0, 0, 0, 0.9);
+  --jn-shadow-card: 0 18rpx 42rpx rgba(0, 0, 0, 0.16);
+  --jn-shadow-button: 4rpx 6rpx 0 rgba(0, 0, 0, 0.2);
+  --jn-radius-card: 12rpx 34rpx 12rpx 34rpx;
+  --jn-radius-control: 8rpx 18rpx 8rpx 18rpx;
+  --jn-card-backdrop-filter: blur(10px) saturate(0.9);
+  --jn-bg-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(225, 225, 220, 0.24)), url('./assets/bagua-taoist.png');
+  --jn-preview-image: linear-gradient(rgba(255, 255, 255, 0.04), rgba(214, 214, 209, 0.16)), url('./assets/bagua-taoist.png');
+  --jn-surface-image: linear-gradient(rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.86)), url('./assets/bagua-taoist.png');
+}
+
+/* uni-popup 的 wrapper 只是定位结构；八卦纹理只保留在实际内容面板，避免双层背景重影。 */
+.jn-theme-bagua-taoist .uni-popup__wrapper {
+  background-color: transparent;
+  background-image: none;
+}
+
+.jn-theme-bagua-taoist .uni-popup__wrapper .popup-content {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.94)), url('./assets/bagua-taoist.png');
+  background-position: center;
+  border: 2rpx solid rgba(0, 0, 0, 0.42);
+  box-shadow: 0 32rpx 80rpx rgba(0, 0, 0, 0.36);
+}
+
+/* 科技风重主题：高对比主色与不同密度的网格、光晕、玻璃表面。 */
+.jn-theme-neon-matrix,
+.jn-theme-quantum-violet,
+.jn-theme-arctic-circuit {
+  --jn-color-transparent: transparent;
+  --jn-color-surface-overlay: rgba(229, 255, 252, 0.1);
+  --jn-color-surface-overlay-strong: rgba(229, 255, 252, 0.18);
+  --jn-color-overlay-subtle: rgba(0, 4, 15, 0.16);
+  --jn-color-overlay-light: rgba(0, 4, 15, 0.24);
+  --jn-color-overlay-soft: rgba(0, 4, 15, 0.35);
+  --jn-color-overlay-medium: rgba(0, 4, 15, 0.46);
+  --jn-color-overlay: rgba(0, 4, 15, 0.62);
+  --jn-color-overlay-strong: rgba(0, 4, 15, 0.74);
+  --jn-color-overlay-heavy: rgba(0, 4, 15, 0.84);
+  --jn-color-overlay-opaque: rgba(0, 4, 15, 0.96);
+}
+
+.jn-theme-neon-matrix {
+  --jn-theme-name: 'neon-matrix';
+  --jn-color-page-bg: #070a19;
+  --jn-color-surface: rgba(9, 17, 42, 0.86);
+  --jn-color-surface-solid: #0c1834;
+  --jn-color-surface-muted: #132850;
+  --jn-color-text-primary: #dffdf8;
+  --jn-color-text-secondary: #9bc9d0;
+  --jn-color-text-tertiary: #628ca0;
+  --jn-color-text-inverse: #041516;
+  --jn-color-border: rgba(48, 241, 208, 0.46);
+  --jn-color-divider: rgba(48, 241, 208, 0.2);
+  --jn-color-primary: #30f1d0;
+  --jn-color-primary-hover: #1ebda8;
+  --jn-color-primary-soft: rgba(48, 241, 208, 0.18);
+  --jn-color-secondary: #f06ac8;
+  --jn-color-accent: #96a8ff;
+  --jn-color-success: #57e89b;
+  --jn-color-warning: #ffd265;
+  --jn-color-danger: #ff7693;
+  --jn-color-success-soft: rgba(87, 232, 155, 0.18);
+  --jn-color-warning-soft: rgba(255, 210, 101, 0.18);
+  --jn-color-danger-soft: rgba(255, 118, 147, 0.18);
+  --jn-shadow-card: 0 0 0 1rpx rgba(48, 241, 208, 0.24), 0 18rpx 44rpx rgba(0, 0, 0, 0.48);
+  --jn-shadow-button: 0 0 22rpx rgba(48, 241, 208, 0.48);
+  --jn-radius-card: 4rpx;
+  --jn-radius-control: 2rpx;
+  --jn-card-backdrop-filter: blur(12px) saturate(1.2);
+  --jn-bg-image: linear-gradient(rgba(7, 10, 25, 0.14), rgba(7, 10, 25, 0.32)), url('./assets/neon-matrix.png');
+  --jn-preview-image: linear-gradient(rgba(7, 10, 25, 0.08), rgba(7, 10, 25, 0.22)), url('./assets/neon-matrix.png');
+  --jn-surface-image: linear-gradient(rgba(9, 17, 42, 0.84), rgba(9, 17, 42, 0.9)), url('./assets/neon-matrix.png');
+}
+
+.jn-theme-quantum-violet {
+  --jn-theme-name: 'quantum-violet';
+  --jn-color-page-bg: #130d2e;
+  --jn-color-surface: rgba(39, 26, 79, 0.72);
+  --jn-color-surface-solid: #291b54;
+  --jn-color-surface-muted: rgba(70, 48, 122, 0.76);
+  --jn-color-text-primary: #f1eaff;
+  --jn-color-text-secondary: #c1b4e9;
+  --jn-color-text-tertiary: #887aba;
+  --jn-color-text-inverse: #170d32;
+  --jn-color-border: rgba(168, 131, 255, 0.4);
+  --jn-color-divider: rgba(168, 131, 255, 0.18);
+  --jn-color-primary: #a883ff;
+  --jn-color-primary-hover: #865cde;
+  --jn-color-primary-soft: rgba(168, 131, 255, 0.2);
+  --jn-color-secondary: #66e0ec;
+  --jn-color-accent: #f0a4ff;
+  --jn-color-success: #6fe0ae;
+  --jn-color-warning: #facb70;
+  --jn-color-danger: #ff89b1;
+  --jn-color-success-soft: rgba(111, 224, 174, 0.2);
+  --jn-color-warning-soft: rgba(250, 203, 112, 0.2);
+  --jn-color-danger-soft: rgba(255, 137, 177, 0.2);
+  --jn-shadow-card: 0 24rpx 62rpx rgba(5, 0, 25, 0.54);
+  --jn-shadow-button: 0 0 26rpx rgba(168, 131, 255, 0.46);
+  --jn-radius-card: 38rpx 14rpx 38rpx 14rpx;
+  --jn-radius-control: 999rpx;
+  --jn-card-backdrop-filter: blur(22px) saturate(1.26);
+  --jn-bg-image: linear-gradient(rgba(18, 12, 45, 0.08), rgba(18, 12, 45, 0.34)), url('./assets/quantum-violet.png');
+  --jn-preview-image: linear-gradient(rgba(18, 12, 45, 0.06), rgba(18, 12, 45, 0.22)), url('./assets/quantum-violet.png');
+  --jn-surface-image: linear-gradient(rgba(39, 26, 79, 0.78), rgba(39, 26, 79, 0.88)), url('./assets/quantum-violet.png');
+}
+
+.jn-theme-arctic-circuit {
+  --jn-theme-name: 'arctic-circuit';
+  --jn-color-page-bg: #061927;
+  --jn-color-surface: rgba(11, 42, 62, 0.76);
+  --jn-color-surface-solid: #0d3047;
+  --jn-color-surface-muted: #164861;
+  --jn-color-text-primary: #e5f9ff;
+  --jn-color-text-secondary: #acd2e2;
+  --jn-color-text-tertiary: #739eaf;
+  --jn-color-text-inverse: #06212d;
+  --jn-color-border: rgba(100, 219, 255, 0.42);
+  --jn-color-divider: rgba(100, 219, 255, 0.18);
+  --jn-color-primary: #64dbff;
+  --jn-color-primary-hover: #3bb5db;
+  --jn-color-primary-soft: rgba(100, 219, 255, 0.18);
+  --jn-color-secondary: #6ef0c2;
+  --jn-color-accent: #aec5ff;
+  --jn-color-success: #66dba7;
+  --jn-color-warning: #ffd37a;
+  --jn-color-danger: #ff8e9f;
+  --jn-color-success-soft: rgba(102, 219, 167, 0.18);
+  --jn-color-warning-soft: rgba(255, 211, 122, 0.18);
+  --jn-color-danger-soft: rgba(255, 142, 159, 0.18);
+  --jn-shadow-card: 0 16rpx 44rpx rgba(0, 11, 21, 0.46);
+  --jn-shadow-button: 0 0 20rpx rgba(100, 219, 255, 0.4);
+  --jn-radius-card: 12rpx;
+  --jn-radius-control: 8rpx;
+  --jn-card-backdrop-filter: blur(16px) saturate(1.16);
+  --jn-bg-image: linear-gradient(rgba(6, 25, 39, 0.08), rgba(6, 25, 39, 0.28)), url('./assets/arctic-circuit.png');
+  --jn-preview-image: linear-gradient(rgba(6, 25, 39, 0.06), rgba(6, 25, 39, 0.2)), url('./assets/arctic-circuit.png');
+  --jn-surface-image: linear-gradient(rgba(11, 42, 62, 0.78), rgba(11, 42, 62, 0.88)), url('./assets/arctic-circuit.png');
+}
+
+.jn-theme-sapphire-orbit {
+  --jn-theme-name: 'sapphire-orbit';
+  --jn-color-transparent: transparent;
+  --jn-color-page-bg: #2368b8;
+  --jn-color-surface: rgba(78, 145, 214, 0.78);
+  --jn-color-surface-solid: #5598da;
+  --jn-color-surface-muted: #6ba9e5;
+  --jn-color-text-primary: #f6fbff;
+  --jn-color-text-secondary: #d3eaff;
+  --jn-color-text-tertiary: #acd2f4;
+  --jn-color-text-inverse: #123c7a;
+  --jn-color-border: rgba(207, 238, 255, 0.62);
+  --jn-color-divider: rgba(207, 238, 255, 0.34);
+  --jn-color-primary: #d1efff;
+  --jn-color-primary-hover: #effaff;
+  --jn-color-primary-soft: rgba(209, 239, 255, 0.24);
+  --jn-color-secondary: #b9e1ff;
+  --jn-color-accent: #e1f4ff;
+  --jn-color-success: #b2f0dc;
+  --jn-color-warning: #fff0bc;
+  --jn-color-danger: #ffd0dc;
+  --jn-color-success-soft: rgba(178, 240, 220, 0.2);
+  --jn-color-warning-soft: rgba(255, 240, 188, 0.2);
+  --jn-color-danger-soft: rgba(255, 208, 220, 0.2);
+  --jn-color-surface-overlay: rgba(245, 252, 255, 0.18);
+  --jn-color-surface-overlay-strong: rgba(245, 252, 255, 0.3);
+  --jn-color-overlay-subtle: rgba(9, 43, 98, 0.1);
+  --jn-color-overlay-light: rgba(9, 43, 98, 0.18);
+  --jn-color-overlay-soft: rgba(9, 43, 98, 0.28);
+  --jn-color-overlay-medium: rgba(9, 43, 98, 0.4);
+  --jn-color-overlay: rgba(9, 43, 98, 0.54);
+  --jn-color-overlay-strong: rgba(9, 43, 98, 0.68);
+  --jn-color-overlay-heavy: rgba(9, 43, 98, 0.8);
+  --jn-color-overlay-opaque: rgba(9, 43, 98, 0.92);
+  --jn-shadow-card: 0 18rpx 46rpx rgba(9, 54, 122, 0.26), 0 0 22rpx rgba(169, 226, 255, 0.24), inset 0 0 0 1rpx rgba(237, 250, 255, 0.16);
+  --jn-shadow-button: 0 0 22rpx rgba(206, 239, 255, 0.34);
+  --jn-radius-card: 0;
+  --jn-radius-control: 8rpx;
+  --jn-card-backdrop-filter: blur(20px) saturate(1.24);
+  --jn-bg-image: linear-gradient(145deg, rgba(93, 172, 242, 0.7), rgba(34, 103, 192, 0.22) 52%, rgba(128, 197, 255, 0.52)), url('./assets/sapphire-orbit.png');
+  --jn-preview-image: linear-gradient(145deg, rgba(113, 187, 250, 0.58), rgba(37, 106, 194, 0.14) 52%, rgba(154, 213, 255, 0.42)), url('./assets/sapphire-orbit.png');
+  --jn-surface-image: linear-gradient(145deg, rgba(90, 162, 226, 0.78), rgba(47, 111, 195, 0.84)), url('./assets/sapphire-orbit.png');
+}
+
+/* 深蓝星轨使用切角和侧边缺口的框体，模拟精密蓝色控制台。 */
+.jn-theme-sapphire-orbit .jn-card,
+.jn-theme-sapphire-orbit .uni-card {
+  position: relative;
+  border-color: rgba(169, 226, 255, 0.54);
+}
+
+.jn-theme-sapphire-orbit .jn-card::before,
+.jn-theme-sapphire-orbit .uni-card::before {
+  position: absolute;
+  z-index: 0;
+  inset: 8rpx;
+  pointer-events: none;
+  content: '';
+  border: 2rpx solid rgba(212, 244, 255, 0.9);
+  box-shadow: 0 0 12rpx rgba(131, 216, 255, 0.7), inset 0 0 10rpx rgba(131, 216, 255, 0.2);
+  clip-path: polygon(
+    0 28rpx,
+    28rpx 0,
+    calc(100% - 28rpx) 0,
+    100% 28rpx,
+    100% 38%,
+    calc(100% - 10rpx) calc(38% + 10rpx),
+    calc(100% - 10rpx) calc(62% - 10rpx),
+    100% 62%,
+    100% calc(100% - 28rpx),
+    calc(100% - 28rpx) 100%,
+    28rpx 100%,
+    0 calc(100% - 28rpx),
+    0 62%,
+    10rpx calc(62% - 10rpx),
+    10rpx calc(38% + 10rpx),
+    0 38%
+  );
+}
+
+.jn-theme-sapphire-orbit .jn-card > *,
+.jn-theme-sapphire-orbit .uni-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 页面公共骨架：主题背景图 + 过渡 */
+.jn-page {
+  min-height: 100vh;
+  color: var(--jn-color-text-primary);
+  background-color: var(--jn-color-page-bg);
+  background-image: var(--jn-bg-image);
+  background-size: var(--jn-bg-size, cover);
+  background-position: center top;
+  transition: color 240ms ease, background-color 240ms ease;
+}
+
+.jn-card {
+  color: var(--jn-color-text-primary);
+  background: var(--jn-color-surface);
+  background-image: var(--jn-surface-image, none);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  border: 1rpx solid var(--jn-color-border);
+  border-radius: var(--jn-radius-card);
+  box-shadow: var(--jn-shadow-card);
+  backdrop-filter: var(--jn-card-backdrop-filter, blur(18px));
+  transition: border-radius 240ms ease, box-shadow 240ms ease, background 240ms ease;
+}
+
+/* 重主题的容器复用同一张低对比度面板纹理；轻主题未定义该变量，仍为纯色表面。 */
+.uni-card,
+.uni-popup__wrapper,
+.uni-popup-dialog,
+.uni-collapse-item__title,
+.uni-collapse-item__wrap {
+  background-image: var(--jn-surface-image, none);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* JnDialog / JnDrawer 的 popup wrapper 只负责定位，实际面板由组件自身承载。 */
+.jn-overlay-popup .uni-popup__wrapper {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* 覆盖自定义导航 header（z-index: 1000），让对话框与抽屉始终处于页面最上层。 */
+.jn-overlay-popup.uni-popup {
+  z-index: 2001;
+}
+
+/* H5 使用 backdrop-filter 呈现毛玻璃；不支持该能力的平台退化为半透明遮罩。 */
+.jn-overlay-popup--blur > view > view:first-child {
+  backdrop-filter: blur(16px) saturate(1.12);
+}
+
+.jn-btn--primary {
+  color: var(--jn-color-text-inverse);
+  background: var(--jn-color-primary);
+  border-radius: var(--jn-radius-control);
+  box-shadow: var(--jn-shadow-button);
+  transition: border-radius 240ms ease, background 240ms ease, box-shadow 240ms ease;
+}
+
+.jn-btn--secondary {
+  color: var(--jn-color-primary);
+  background: var(--jn-color-primary-soft);
+  border-radius: var(--jn-radius-control);
+  transition: border-radius 240ms ease, background 240ms ease;
+}
+
+/* uni-button 是 uni-app 内置标签，不会走本地 uni_modules 解析；在主题根节点直接覆盖其平台默认色。 */
+.jn-page uni-button,
+.jn-page button[type] {
+  color: var(--jn-color-text-primary);
+  background-color: var(--jn-color-surface-solid);
+  border: 1rpx solid var(--jn-color-border);
+  border-radius: var(--jn-radius-control);
+  box-shadow: none;
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+
+.jn-page uni-button::after,
+.jn-page button[type]::after {
+  border: 0;
+}
+
+.jn-page uni-button[type='primary'],
+.jn-page button[type='primary'] {
+  color: var(--jn-color-text-inverse);
+  background-color: var(--jn-color-primary);
+  border-color: var(--jn-color-primary);
+  box-shadow: var(--jn-shadow-button);
+}
+
+.jn-page uni-button[type='success'],
+.jn-page button[type='success'] {
+  color: var(--jn-color-text-inverse);
+  background-color: var(--jn-color-success);
+  border-color: var(--jn-color-success);
+}
+
+.jn-page uni-button[type='warning'],
+.jn-page uni-button[type='warn'],
+.jn-page button[type='warning'],
+.jn-page button[type='warn'] {
+  color: var(--jn-color-text-inverse);
+  background-color: var(--jn-color-warning);
+  border-color: var(--jn-color-warning);
+}
+
+.jn-page uni-button[type='error'],
+.jn-page button[type='error'] {
+  color: var(--jn-color-text-inverse);
+  background-color: var(--jn-color-danger);
+  border-color: var(--jn-color-danger);
+}
+
+.jn-page uni-button[type='info'],
+.jn-page button[type='info'] {
+  color: var(--jn-color-text-inverse);
+  background-color: var(--jn-color-secondary);
+  border-color: var(--jn-color-secondary);
+}
+
+.jn-page uni-button[plain],
+.jn-page button[plain] {
+  color: var(--jn-color-primary);
+  background-color: var(--jn-color-transparent);
+  border-color: var(--jn-color-primary);
+  box-shadow: none;
+}
+
+.jn-page uni-button[disabled],
+.jn-page button[disabled] {
+  opacity: 0.45;
+}
+
+/* jn- 语义工具类：组件用这些而非硬编码颜色，自动跟随主题 */
+.jn-text-primary { color: var(--jn-color-text-primary); }
+.jn-text-secondary { color: var(--jn-color-text-secondary); }
+.jn-text-tertiary { color: var(--jn-color-text-tertiary); }
+.jn-text-inverse { color: var(--jn-color-text-inverse); }
+.jn-primary { color: var(--jn-color-primary); }
+.jn-bg-page { background-color: var(--jn-color-page-bg); }
+.jn-bg-solid { background-color: var(--jn-color-surface-solid); }
+.jn-bg-surface { background: var(--jn-color-surface); }
+.jn-bg-primary { background-color: var(--jn-color-primary); }
+.jn-bg-primary-soft { background-color: var(--jn-color-primary-soft); }
+.jn-border { border-color: var(--jn-color-border); }
+.jn-divider-color { border-color: var(--jn-color-divider); }
